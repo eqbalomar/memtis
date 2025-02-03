@@ -914,6 +914,10 @@ struct htmm_cooling_arg {
     struct mem_cgroup *memcg;
 };
 
+struct htmm_freq_arg {
+    unsigned long accesses;
+};
+
 static bool cooling_page_one(struct page *page, struct vm_area_struct *vma,
 	unsigned long address, void *arg)
 {
@@ -1108,7 +1112,43 @@ static bool get_pginfo_idx_one(struct page *page, struct vm_area_struct *vma,
 
     return true;
 }
-    
+
+static bool page_get_accesses_one(struct page *page, struct vm_area_struct *vma,
+	unsigned long address, void *arg)
+{
+    struct htmm_freq_arg *hfa = arg;
+    struct page_vma_mapped_walk pvmw = {
+	.page = page,
+	.vma = vma,
+	.address = address,
+    };
+    pginfo_t *pginfo;
+
+    while (page_vma_mapped_walk(&pvmw)) {
+	address = pvmw.address;
+	page = pvmw.page;
+
+	if (pvmw.pte) {
+	    struct page *pte_page;
+	    pte_t *pte = pvmw.pte;
+
+	    pte_page = virt_to_page((unsigned long)pte);
+	    if (!PageHtmm(pte_page))
+		continue;
+
+	    pginfo = get_pginfo_from_pte(pte);
+	    if (!pginfo)
+		continue;
+	    
+	    hfa->accesses = pginfo->total_accesses;
+	} else if (pvmw.pmd) {
+	    hfa->accesses = 0;
+	}
+    }
+
+    return true;
+}
+
 int get_pginfo_idx(struct page *page)
 {
     struct htmm_cooling_arg hca = {
@@ -1128,6 +1168,29 @@ int get_pginfo_idx(struct page *page)
     rmap_walk(page, &rwc);
     return hca.page_is_hot;
 }
+
+// Returns 0 if untracked page
+unsigned long page_get_accesses(struct page *page) {
+	struct htmm_freq_arg hfa = {
+		.accesses = 0,
+	};
+	struct rmap_walk_control rwc = {
+		.rmap_one = page_get_accesses_one,
+		.arg = (void *)&hfa,
+    };
+
+	if (!PageAnon(page) || PageKsm(page)) {
+		return 0;
+	}
+
+    if (!page_mapped(page)) {
+		return 0;
+	}
+	
+	rmap_walk(page, &rwc);
+    return hfa.accesses;
+}
+
 #endif
 
 static bool page_mkclean_one(struct page *page, struct vm_area_struct *vma,

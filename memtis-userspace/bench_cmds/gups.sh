@@ -9,10 +9,8 @@ workload=${NVM_RATIO}
 
 if [ -n "${MEMTIS_GUPS_MOVE}" ]; then
 	BENCH_RUN="${BIN}/${workload} ${gups_cores} move ${MEMTIS_GUPS_MOVE}"
-elif [ -n "${MEMTIS_GUPS_DELAY_BG}" ]; then
-	BENCH_RUN="DELAY_BG=${MEMTIS_GUPS_DELAY_BG} ${BIN}/${workload} ${gups_cores}"
 else
-	BENCH_RUN="${BIN}/${workload} ${gups_cores}"
+    BENCH_RUN="${BIN}/${workload} ${gups_cores}"
 fi
 
 

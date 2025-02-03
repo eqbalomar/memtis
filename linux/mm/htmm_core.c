@@ -1376,12 +1376,14 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
 	memcg->nr_sampled++;
 	memcg->nr_sampled_for_split++;
 	memcg->nr_dram_sampled++;
-	memcg->nr_max_sampled++;
+	// memcg->nr_max_sampled++;
+	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
     }
     else if (ret == 2) {
 	memcg->nr_sampled++;
 	memcg->nr_sampled_for_split++;
-	memcg->nr_max_sampled++;
+	// memcg->nr_max_sampled++;
+	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
     } else
 	goto mmap_unlock;
     
@@ -1440,8 +1442,9 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
 		}
 	    }
 	    printk("total_accesses: %lu max_dram_hits: %lu cur_hits: %lu \n",
-		    memcg->nr_max_sampled, memcg->prev_max_dram_sampled, memcg->prev_dram_sampled);
-	    memcg->nr_max_sampled >>= 1;
+		    READ_ONCE(memcg->nr_max_sampled), memcg->prev_max_dram_sampled, memcg->prev_dram_sampled);
+	    // memcg->nr_max_sampled >>= 1;
+		WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) >> 1);
 	}
     }
     /* threshold adaptation */

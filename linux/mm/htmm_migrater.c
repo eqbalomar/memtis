@@ -16,8 +16,12 @@
 #include <linux/htmm.h>
 #include <linux/wait.h>
 #include <linux/sched.h>
+#define CREATE_TRACE_POINTS
+#include <trace/events/colloid.h>
+
 
 #include "internal.h"
+
 
 #define MIN_WATERMARK_LOWER_LIMIT   128 * 100 // 50MB
 #define MIN_WATERMARK_UPPER_LIMIT   2560 * 100 // 1000MB
@@ -36,6 +40,16 @@
 #else
 #define prefetchw_prev_lru_page(_page, _base, _field) do { } while (0)
 #endif
+
+// colloid state
+int colloid_local_lat_gt_remote = 0;
+EXPORT_SYMBOL(colloid_local_lat_gt_remote);
+int colloid_nid_of_interest = NUMA_NO_NODE;
+EXPORT_SYMBOL(colloid_nid_of_interest);
+unsigned long colloid_delta_p = 0; // scaled by COLLOID_PRECISION
+EXPORT_SYMBOL(colloid_delta_p);
+unsigned long colloid_dynlimit = 0; // expressed in base pages
+EXPORT_SYMBOL(colloid_dynlimit);
 
 void add_memcg_to_kmigraterd(struct mem_cgroup *memcg, int nid)
 {
@@ -463,6 +477,49 @@ __keep:
     return nr_promoted;
 }
 
+static unsigned long migrate_page_list_safe(struct list_head *page_list,
+	pg_data_t *pgdat, bool promotion)
+{
+    LIST_HEAD(migrate_pages);
+    LIST_HEAD(ret_pages);
+    unsigned long nr_migrated = 0;
+
+    cond_resched();
+
+    while (!list_empty(page_list)) {
+	struct page *page;
+
+	page = lru_to_page(page_list);
+	list_del(&page->lru);
+	
+	if (!trylock_page(page))
+	    goto __keep;
+	if (!PageActive(page) && htmm_mode != HTMM_NO_MIG)
+	    goto __keep_locked;
+	if (unlikely(!page_evictable(page)))
+	    goto __keep_locked;
+	if (PageWriteback(page))
+	    goto __keep_locked;
+	if (PageTransHuge(page) && !thp_migration_supported())
+	    goto __keep_locked;
+
+	list_add(&page->lru, &migrate_pages);
+	unlock_page(page);
+	continue;
+__keep_locked:
+	unlock_page(page);
+__keep:
+	list_add(&page->lru, &ret_pages);
+    }
+
+    nr_migrated = migrate_page_list(&migrate_pages, pgdat, promotion);
+    if (!list_empty(&migrate_pages))
+	list_splice(&migrate_pages, page_list);
+
+    list_splice(&ret_pages, page_list);
+    return nr_migrated;
+}
+
 static unsigned long demote_inactive_list(unsigned long nr_to_scan,
 	unsigned long nr_to_reclaim, struct lruvec *lruvec,
 	enum lru_list lru, bool shrink_active)
@@ -631,10 +688,78 @@ static unsigned long demote_node(pg_data_t *pgdat, struct mem_cgroup *memcg,
     return nr_reclaimed;
 }
 
+// migrate up to nr_to_promote pages accounting for up to delta_p probability mass
+static unsigned long migrate_lruvec_colloid(unsigned long nr_to_scan, unsigned long migrate_limit, unsigned long delta_p, unsigned long overall_accesses, 
+	pg_data_t *pgdat, struct lruvec *lruvec, enum lru_list lru, bool promotion) {
+
+		LIST_HEAD(page_list);
+		LIST_HEAD(candidate_list);
+		LIST_HEAD(remaining_list);
+		// pg_data_t *pgdat = lruvec_pgdat(lruvec);
+		unsigned long nr_taken, nr_migrated, nr_candidate_pages, pmass, page_freq, page_p;
+
+		if(overall_accesses == 0)
+			return 0;
+		
+		lru_add_drain();
+
+		spin_lock_irq(&lruvec->lru_lock);
+		nr_taken = isolate_lru_pages(nr_to_scan, lruvec, lru, &page_list, 0);
+		__mod_node_page_state(pgdat, NR_ISOLATED_ANON, nr_taken);
+		spin_unlock_irq(&lruvec->lru_lock);
+
+		if (nr_taken == 0)
+			return 0;
+
+		nr_candidate_pages = 0;
+		pmass = delta_p;
+		while(!list_empty(&page_list) && nr_candidate_pages < migrate_limit && pmass > 0) {
+			struct page *page;
+			page = lru_to_page(&page_list);
+			list_del(&page->lru);
+
+			if (PageTransHuge(compound_head(page))) {
+				struct page *meta = get_meta_page(page);
+				page_freq = (unsigned long) meta->total_accesses;
+			} else {
+				page_freq = (unsigned long) (page_get_accesses(page)/HPAGE_PMD_NR); // Converting from hotness to access frequency
+			}
+
+		
+			page_p = (page_freq * COLLOID_PRECISION)/overall_accesses;
+			if(page_p <= pmass && page_p > 0) {
+				list_add(&page->lru, &candidate_list);
+				nr_candidate_pages += PageTransHuge(compound_head(page)) ? (HPAGE_PMD_NR) : (1);
+				pmass -= page_p;
+			} else {
+				list_add(&page->lru, &remaining_list);
+			}
+		}
+		if(!list_empty(&page_list))
+			list_splice(&page_list, &remaining_list);
+
+
+		nr_migrated = migrate_page_list_safe(&candidate_list, pgdat, promotion);
+		if(!list_empty(&candidate_list))
+			list_splice(&candidate_list, &remaining_list);
+
+		spin_lock_irq(&lruvec->lru_lock);
+		move_pages_to_lru(lruvec, &remaining_list);
+		__mod_node_page_state(pgdat, NR_ISOLATED_ANON, -nr_taken);
+		spin_unlock_irq(&lruvec->lru_lock);
+
+		mem_cgroup_uncharge_list(&remaining_list);
+		free_unref_page_list(&remaining_list);
+
+		trace_colloid_migrate(nr_to_scan, migrate_limit, delta_p, overall_accesses, promotion, nr_migrated);
+
+		return nr_migrated;
+}
+
 static unsigned long promote_node(pg_data_t *pgdat, struct mem_cgroup *memcg)
 {
     struct lruvec *lruvec = mem_cgroup_lruvec(memcg, pgdat);
-    unsigned long nr_to_promote, nr_promoted = 0, tmp;
+    unsigned long nr_to_promote, nr_promoted = 0, tmp, delta_p, overall_accesses;
     enum lru_list lru = LRU_ACTIVE_ANON;
     short priority = DEF_PRIORITY;
     int target_nid = htmm_cxl_mode ? HTMM_CXL_LOCAL_NUMA : next_promotion_node(pgdat->node_id);
@@ -644,6 +769,16 @@ static unsigned long promote_node(pg_data_t *pgdat, struct mem_cgroup *memcg)
 
     nr_to_promote = min(nr_to_promote,
 		    lruvec_lru_size(lruvec, lru, MAX_NR_ZONES));
+	
+	if(htmm_colloid) {
+		// apply colloid migration limit
+		nr_to_promote = min(nr_to_promote, min((unsigned long)htmm_migration_limit_nr_pages, READ_ONCE(colloid_dynlimit)));
+		delta_p = READ_ONCE(colloid_delta_p);
+		overall_accesses = READ_ONCE(memcg->nr_max_sampled);
+		// promote up to nr_to_promote pages accounting for up to delta_p probability mass
+		nr_promoted = migrate_lruvec_colloid(nr_to_promote, nr_to_promote, delta_p, overall_accesses, pgdat, lruvec, lru, true);
+		return nr_promoted;
+	}
     
     if (nr_to_promote == 0 && htmm_mode == HTMM_NO_MIG) {
 	lru = LRU_INACTIVE_ANON;
@@ -652,12 +787,13 @@ static unsigned long promote_node(pg_data_t *pgdat, struct mem_cgroup *memcg)
     do {
 	nr_promoted += promote_lruvec(nr_to_promote, priority, pgdat, lruvec, lru);
 	if (nr_promoted >= nr_to_promote)
-	    break;
+		break;
 	priority--;
     } while (priority);
     
     return nr_promoted;
 }
+
 
 static unsigned long cooling_active_list(unsigned long nr_to_scan,
 	struct lruvec *lruvec, enum lru_list lru)
@@ -999,9 +1135,27 @@ static int kmigraterd_demotion(pg_data_t *pgdat)
     return 0;
 }
 
+static unsigned long demote_node_active_colloid(pg_data_t *pgdat, struct mem_cgroup *memcg)
+{
+    struct lruvec *lruvec = mem_cgroup_lruvec(memcg, pgdat);
+    unsigned long nr_to_demote, nr_demoted = 0, delta_p, overall_accesses;
+    enum lru_list lru = LRU_ACTIVE_ANON;
+
+    nr_to_demote = lruvec_lru_size(lruvec, lru, MAX_NR_ZONES);
+	
+	// apply colloid migration limit
+	nr_to_demote = min(nr_to_demote, min((unsigned long)htmm_migration_limit_nr_pages, READ_ONCE(colloid_dynlimit)));
+	delta_p = READ_ONCE(colloid_delta_p);
+	overall_accesses = READ_ONCE(memcg->nr_max_sampled);
+	// demote up to nr_to_demote pages accounting for up to delta_p probability mass
+	nr_demoted = migrate_lruvec_colloid(nr_to_demote, nr_to_demote, delta_p, overall_accesses, pgdat, lruvec, lru, false);
+	return nr_demoted;
+}
+
 static int kmigraterd_promotion(pg_data_t *pgdat)
 {
     const struct cpumask *cpumask;
+	pg_data_t *upper_pgdat;
 
     if (htmm_cxl_mode)
     	cpumask = cpumask_of_node(pgdat->node_id);
@@ -1052,9 +1206,15 @@ static int kmigraterd_promotion(pg_data_t *pgdat)
 		adjusting_node(pgdat, memcg, false);
 	}
 
-	/* promotes hot pages to fast memory node */
-	if (need_lowertier_promotion(pgdat, memcg)) {
-	    promote_node(pgdat, memcg);
+	if(!htmm_colloid || !READ_ONCE(colloid_local_lat_gt_remote)) {
+		/* promotes hot pages to fast memory node */
+		if (need_lowertier_promotion(pgdat, memcg)) {
+	    	promote_node(pgdat, memcg);
+		}
+	} else {
+		// demote hot pages from default tier to alternate tier
+		upper_pgdat = htmm_cxl_mode ? NODE_DATA(HTMM_CXL_LOCAL_NUMA) : NODE_DATA(next_promotion_node(pgdat->node_id));
+		demote_node_active_colloid(upper_pgdat, memcg);
 	}
 
 	msleep_interruptible(htmm_promotion_period_in_ms);

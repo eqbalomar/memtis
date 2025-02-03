@@ -5242,7 +5242,8 @@ static struct mem_cgroup *mem_cgroup_alloc(void)
 	memcg->prev_dram_sampled = 0;
 	memcg->max_dram_sampled = 0;
 	memcg->prev_max_dram_sampled = 0;
-	memcg->nr_max_sampled = 0;
+	// memcg->nr_max_sampled = 0;
+	WRITE_ONCE(memcg->nr_max_sampled, 0);
 	/* thresholds */
 	memcg->active_threshold = htmm_thres_hot;
 	memcg->warm_threshold = htmm_thres_hot;

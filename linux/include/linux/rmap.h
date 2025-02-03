@@ -194,6 +194,8 @@ int page_referenced(struct page *, int is_locked,
 int cooling_page(struct page *page, struct mem_cgroup *memcg);
 int page_check_hotness(struct page *page, struct mem_cgroup *memcg);
 int get_pginfo_idx(struct page *page);
+unsigned long page_get_accesses(struct page *page);
+
 #endif
 void try_to_migrate(struct page *page, enum ttu_flags flags);
 void try_to_unmap(struct page *, enum ttu_flags flags);
