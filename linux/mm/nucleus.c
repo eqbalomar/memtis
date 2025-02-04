@@ -1,22 +1,31 @@
-#include <linux/huge_mm.h>
-#include <linux/nucleus.h>
+#include <linux/list.h>
+#include <linux/memcontrol.h>
 #include <linux/mempolicy.h>
+#include <linux/mmzone.h>
+#include <linux/mm_inline.h>
+#include <linux/rmap.h>
+#include <linux/htmm.h>
+
+#include <linux/nucleus.h>
 
 struct list_head nucleus_hugepages_list = LIST_HEAD_INIT(nucleus_hugepages_list);
 struct list_head nucleus_basepages_list = LIST_HEAD_INIT(nucleus_basepages_list);
 
-void add_to_nucleus_lists(struct list_head* page_list, struct list_head* lru_list_tmp) {
+EXPORT_SYMBOL(nucleus_hugepages_list);
+EXPORT_SYMBOL(nucleus_basepages_list);
+
+static void add_to_nucleus_lists(struct list_head* page_list, struct list_head* lru_list_tmp) {
 	int i, idx, offset;
-	while (!list_empty(&page_list)) {
+	while (!list_empty(page_list)) {
 		struct page *page;
 
-		page = lru_to_page(&page_list);
+		page = lru_to_page(page_list);
 		list_del(&page->lru);
 
-		if (PageTransHuge(compound_head(page))) {
-			struct nucleus_basepage *hp = kzalloc(sizeof(struct nucleus_basepage), GFP_KERNEL);
-			hp->merge_in_hp = false;
+		if (PageTransHuge(page)) {
+			struct nucleus_hugepage *hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
 			struct page *meta = get_meta_page(page);
+			hp->merge_in_hp = false;
 			hp->access_freq = meta->total_accesses;
 			hp->access_freq_to_move_in = 0;
 			hp->num_to_move_in = 0;
@@ -28,8 +37,9 @@ void add_to_nucleus_lists(struct list_head* page_list, struct list_head* lru_lis
 				offset = i % 4;
 				bp->access_freq = page[idx].compound_pginfo[offset].total_accesses;
 				bp->page = nth_page(page, i);
+				bp->hp = hp;
 				list_add_tail(&bp->list_all_bp, &nucleus_basepages_list);
-				list_add_tail(&bp->list_per_hp, &hp->basepages_list);
+				list_add_tail(&bp->list_per_hp, &hp->bp_list);
 			}
 		}
 
@@ -37,11 +47,11 @@ void add_to_nucleus_lists(struct list_head* page_list, struct list_head* lru_lis
 	}
 }
 
-void process_lru_list(struct lruvec *lruvec, enum lru_list lru) {
-	unsigned long nr_to_scan, scan, nr_scanned = 0;
-	nr_to_scan = lruvec_lru_size(lruvec, lru, MAX_NR_ZONES);
+static void process_lru_list(struct pglist_data *pgdat, struct lruvec *lruvec, enum lru_list lru) {
+	unsigned long nr_to_scan, scan, nr_scanned = 0, nr_taken;
 	LIST_HEAD(page_list);
 	LIST_HEAD(lru_list_tmp);
+	nr_to_scan = lruvec_lru_size(lruvec, lru, MAX_NR_ZONES);
 
 	while (nr_scanned < nr_to_scan) {
 		scan = nr_to_scan >> 2;	// isolate 25% pages from the lru list
@@ -69,6 +79,9 @@ void create_nucleus_input_lists() {
 	int nid;
 	for_each_node_state(nid, N_MEMORY) {
 		struct pglist_data *pgdat = NODE_DATA(nid);
+		struct mem_cgroup_per_node *pn;
+		struct mem_cgroup *memcg;
+		struct lruvec *lruvec;
 		
 		// Considering only one memcg per node
 		// TODO: Change this to support multiple memcgs per node
@@ -82,8 +95,10 @@ void create_nucleus_input_lists() {
 			continue;
 		}
 
-		struct lruvec *lruvec = mem_cgroup_lruvec(memcg, pgdat);
-		process_lru_list(lruvec, LRU_ACTIVE_ANON);
-		process_lru_list(lruvec, LRU_INACTIVE_ANON);
-    }
+		lruvec = mem_cgroup_lruvec(memcg, pgdat);
+		process_lru_list(pgdat, lruvec, LRU_ACTIVE_ANON);
+		process_lru_list(pgdat, lruvec, LRU_INACTIVE_ANON);
+	}
 }
+
+EXPORT_SYMBOL(create_nucleus_input_lists);

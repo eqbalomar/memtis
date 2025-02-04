@@ -17,6 +17,7 @@ struct nucleus_basepage {
 	unsigned long access_freq;
 	struct list_head list_all_bp;
 	struct list_head list_per_hp;
+	struct nucleus_hugepage *hp;
 	struct page *page;
 	bool place_in_def;
 };

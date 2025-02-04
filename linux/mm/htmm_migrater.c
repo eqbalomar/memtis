@@ -267,7 +267,7 @@ static __always_inline void update_lru_sizes(struct lruvec *lruvec,
     }
 }
 
-static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
+unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 	struct lruvec *lruvec, enum lru_list lru, struct list_head *dst,
 	isolate_mode_t mode)
 {
@@ -1055,7 +1055,7 @@ static void adjusting_node(pg_data_t *pgdat, struct mem_cgroup *memcg, bool acti
 	WRITE_ONCE(pn->need_adjusting_all, false);
 }
 
-static struct mem_cgroup_per_node *next_memcg_cand(pg_data_t *pgdat)
+struct mem_cgroup_per_node *next_memcg_cand(pg_data_t *pgdat)
 {
     struct mem_cgroup_per_node *pn;
 
