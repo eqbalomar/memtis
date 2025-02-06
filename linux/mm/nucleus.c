@@ -9,8 +9,8 @@
 #include <linux/nucleus.h>
 
 struct nucleus_hugepage *nucleus_hugepages_list;
-struct list_head nucleus_basepages_list = LIST_HEAD_INIT(nucleus_basepages_list);
-unsigned long nucleus_hugepages_count = 0;
+struct list_head nucleus_basepages_list;
+unsigned long nucleus_hugepages_count;
 
 EXPORT_SYMBOL(nucleus_hugepages_list);
 EXPORT_SYMBOL(nucleus_basepages_list);
@@ -127,6 +127,8 @@ void create_nucleus_input_lists() {
 
 	num_hugepages = lruvec_size / HPAGE_PMD_NR;
 	nucleus_hugepages_list = vzalloc(num_hugepages * sizeof(struct nucleus_hugepage));
+	INIT_LIST_HEAD(&nucleus_basepages_list);
+	nucleus_hugepages_count = 0;
 
 	for_each_node_state(nid, N_MEMORY) {
 		pgdat = NODE_DATA(nid);	
