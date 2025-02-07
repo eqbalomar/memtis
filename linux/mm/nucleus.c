@@ -30,11 +30,15 @@ static void add_to_nucleus_lists(struct list_head* page_list, struct list_head* 
 			pr_info("hugepage\n");
 			struct nucleus_hugepage *hp = &nucleus_hugepages_list[nucleus_hugepages_count++];
 			struct page *meta = get_meta_page(page);
-			hp->list_per_hp = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 			hp->merge_in_hp = false;
 			hp->access_freq = meta->total_accesses;
 			hp->access_freq_to_move_in = 0;
 			hp->num_to_move_in = 0;
+			hp->list_per_hp = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
+			if (!hp->list_per_hp) {
+				pr_err("Failed to allocate memory for list_per_hp\n");
+				continue;
+			}
 			for (i = 0; i < HPAGE_PMD_NR; i++) {
 				struct nucleus_basepage *bp = &hp->list_per_hp[i];
 				bp->place_in_def = false;
@@ -125,8 +129,17 @@ void create_nucleus_input_lists() {
 		lruvec_size += lruvec_lru_size(lruvec, LRU_INACTIVE_ANON, MAX_NR_ZONES);
 	}
 
+	if (!lruvec_size) {
+		pr_info("No pages to scan\n");
+		return;
+	}
+
 	num_hugepages = lruvec_size / HPAGE_PMD_NR;
 	nucleus_hugepages_list = vzalloc(num_hugepages * sizeof(struct nucleus_hugepage));
+	if (!nucleus_hugepages_list) {
+		pr_err("Failed to allocate memory for nucleus_hugepages_list\n");
+		return;
+	}
 	INIT_LIST_HEAD(&nucleus_basepages_list);
 	nucleus_hugepages_count = 0;
 
