@@ -20,14 +20,14 @@ static void add_to_nucleus_lists(struct list_head* page_list, struct list_head* 
 	int i, idx, offset, count=0;
 	while (!list_empty(page_list)) {
 		struct page *page;
-		pr_info("get page %d\n", count);
+		// pr_info("get page %d\n", count);
 		page = lru_to_page(page_list);
-		pr_info("delete page %d from list\n", count);
+		// pr_info("delete page %d from list\n", count);
 		list_del(&page->lru);
 
-		pr_info("check for hugepage\n");
+		// pr_info("check for hugepage\n");
 		if (PageTransHuge(page)) {
-			pr_info("hugepage\n");
+			// pr_info("hugepage\n");
 			struct nucleus_hugepage *hp = &nucleus_hugepages_list[nucleus_hugepages_count++];
 			struct page *meta = get_meta_page(page);
 			hp->merge_in_hp = false;
@@ -47,17 +47,17 @@ static void add_to_nucleus_lists(struct list_head* page_list, struct list_head* 
 				bp->access_freq = page[idx].compound_pginfo[offset].total_accesses;
 				bp->page = nth_page(page, i);
 				bp->hp = hp;
-				pr_info("add basepage %d to all bp list\n", i);
+				// pr_info("add basepage %d to all bp list\n", i);
 				list_add_tail(&bp->list_all_bp, &nucleus_basepages_list);
-				pr_info("done add basepage %d to all bp list\n", i);
+				// pr_info("done add basepage %d to all bp list\n", i);
 			}
-			pr_info("done adding hp and bp\n");
+			// pr_info("done adding hp and bp\n");
 		}
-		pr_info("add page %d to lru list\n", count);
+		// pr_info("add page %d to lru list\n", count);
 
 		list_add_tail(&page->lru, lru_list_tmp);
 
-		pr_info("done add page %d to lru list\n", count);
+		// pr_info("done add page %d to lru list\n", count);
 		count++;
 	}
 }
@@ -129,12 +129,12 @@ void create_nucleus_input_lists() {
 		lruvec_size += lruvec_lru_size(lruvec, LRU_INACTIVE_ANON, MAX_NR_ZONES);
 	}
 
-	if (!lruvec_size) {
+	num_hugepages = lruvec_size / HPAGE_PMD_NR;
+	if (!num_hugepages) {
 		pr_info("No pages to scan\n");
 		return;
 	}
 
-	num_hugepages = lruvec_size / HPAGE_PMD_NR;
 	nucleus_hugepages_list = vzalloc(num_hugepages * sizeof(struct nucleus_hugepage));
 	if (!nucleus_hugepages_list) {
 		pr_err("Failed to allocate memory for nucleus_hugepages_list\n");
