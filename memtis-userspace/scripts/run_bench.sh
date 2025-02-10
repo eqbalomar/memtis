@@ -100,6 +100,8 @@ function cleanup() {
 	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm $$ disable
 	sleep 2
 	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm remove
+	echo "madvise" | tee /sys/kernel/mm/transparent_hugepage/enabled
+    echo "madvise" | tee /sys/kernel/mm/transparent_hugepage/defrag
     echo "Cleaned up"
 }
 
