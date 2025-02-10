@@ -94,6 +94,18 @@ function func_prepare() {
 	fi
 }
 
+function cleanup() {
+    sudo killall -9 memory_stat.sh
+	${DIR}/bin/kill_ksampled
+	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm $$ disable
+	sleep 2
+	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm remove
+    echo "Cleaned up"
+}
+
+trap cleanup EXIT
+
+
 function func_main() {
     ${DIR}/bin/kill_ksampled
     TIME="/usr/bin/time"
