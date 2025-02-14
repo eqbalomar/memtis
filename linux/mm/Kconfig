@@ -908,6 +908,10 @@ config HTMM
 
 	  If in doubt, say N.
 
+config NUCLEUS
+	bool "Enable Nucleus algorithm tiered memory management"
+	depends on MIGRATION && TRANSPARENT_HUGEPAGE && HTMM
+
 source "mm/damon/Kconfig"
 
 endmenu

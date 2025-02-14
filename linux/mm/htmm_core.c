@@ -4,6 +4,7 @@
  */
 #include <linux/mm.h>
 #include <linux/kernel.h>
+#include <linux/vmalloc.h>
 #include <linux/huge_mm.h>
 #include <linux/mm_inline.h>
 #include <linux/pid.h>
@@ -15,6 +16,7 @@
 #include <linux/xarray.h>
 #include <linux/math.h>
 #include <linux/random.h>
+#include <linux/nucleus.h>
 
 #define CREATE_TRACE_POINTS
 
@@ -914,6 +916,31 @@ static void update_huge_page(struct vm_area_struct *vma, pmd_t *pmd,
     unsigned long prev_idx, cur_idx;
     bool hot, pg_split = false;
     unsigned long pginfo_prev;
+	unsigned long hp_vaddr = address >> HPAGE_PMD_SHIFT;
+	unsigned long bp_offset = (address & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
+	int i;
+	struct nucleus_hugepage *hp = get_nucleus_hugepage(hp_vaddr);
+	struct nucleus_basepage *bp;
+	if (!hp) {
+		hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
+		if (!hp) {
+			pr_err("Failed to allocate memory for nucleus hugepage\n");
+			return;
+		}
+		pr_info("created hp %lx\n", hp_vaddr);
+		insert_to_nucleus_hugepages_hash(hp, hp_vaddr);
+		list_add_tail(&hp->list, &nucleus_hugepages_deferred_list);
+		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
+		for (i = 0; i < HPAGE_PMD_NR; i++) {
+			bp = &hp->bp_list[i];
+			bp->hp = hp;
+			bp->access_freq = 0;
+		}
+	}
+
+	bp = &hp->bp_list[bp_offset];
+	bp->access_freq++;
+	pr_info("nucleus: hp %lx, bp %lu, access_freq %u\n", hp_vaddr, bp_offset, bp->access_freq);
 
     meta_page = get_meta_page(page);
     pginfo = get_compound_pginfo(page, address);
@@ -926,6 +953,8 @@ static void update_huge_page(struct vm_area_struct *vma, pmd_t *pmd,
     pginfo->total_accesses += HPAGE_PMD_NR;
     
     meta_page->total_accesses++;
+
+	
 
 #ifndef DEFERRED_SPLIT_ISOLATED
     if (check_split_huge_page(memcg, meta_page, false)) {
@@ -1402,6 +1431,11 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
 	    memcg->prev_max_dram_sampled += memcg->max_dram_sampled;
 	    memcg->max_dram_sampled = 0;
 
+
+/* NUCLEUS: Disable split threshold determination */
+
+#ifndef CONFIG_NUCLEUS
+
 	    /* split decision period */
 	    /* split should be performed after cooling due to skewness factor */
 	    if (!memcg->need_split && htmm_thres_split) {
@@ -1441,16 +1475,24 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
 		    set_memcg_split_thres(memcg);
 		}
 	    }
+
+#endif
 	    printk("total_accesses: %lu max_dram_hits: %lu cur_hits: %lu \n",
 		    READ_ONCE(memcg->nr_max_sampled), memcg->prev_max_dram_sampled, memcg->prev_dram_sampled);
 	    // memcg->nr_max_sampled >>= 1;
 		WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) >> 1);
 	}
     }
-    /* threshold adaptation */
+
+/* NUCLEUS: Disable active threshold determination */
+#ifndef CONFIG_NUCLEUS
+
+	/* threshold adaptation */
     else if (memcg->nr_sampled % htmm_adaptation_period == 0) {
 	__adjust_active_threshold(mm, memcg);
     }
+
+#endif
 
 mmap_unlock:
     mmap_read_unlock(mm);

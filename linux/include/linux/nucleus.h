@@ -5,22 +5,40 @@
 
 
 struct nucleus_hugepage {
-	unsigned long access_freq;
-	struct nucleus_basepage *list_per_hp;
-	unsigned long access_freq_to_move_in;
-	unsigned long num_to_move_in;
+	// Initialized by sampling thread on first access
+	struct mm_struct *mm;
+	unsigned long address;	// virtual address
+	struct nucleus_basepage *bp_list;
+	struct hlist_node hash; // hlist_node for adding to hash table
+	struct list_head list;	// list head for adding to list of all hugepages
+	
+	// Fields used within algorithm
+	unsigned int access_freq_to_move_in;
+	unsigned int num_to_move_in;
+
+	// Output of algorithm
 	bool merge_in_hp;
 };
 
 struct nucleus_basepage {
-	unsigned long access_freq;
-	struct list_head list_all_bp;
+	// Initialized by sampling thread on first access
 	struct nucleus_hugepage *hp;
-	struct page *page;
+
+	// Updated by sampling thread on each access/cooling
+	unsigned int access_freq;
+	unsigned int cooling_clk;
+
+	// Fields used within algorithm
+	struct list_head list;	// list head for adding to list of all basepages
+
+	// Output of algorithm
 	bool place_in_def;
 };
 
-void create_nucleus_input_lists(void);
 
+extern struct list_head nucleus_hugepages_deferred_list;
+
+struct nucleus_hugepage *get_nucleus_hugepage(unsigned long hp_vaddr);
+void insert_to_nucleus_hugepages_hash(struct nucleus_hugepage *hp, unsigned long hp_vaddr);
 
 #endif /* _LINUX_NUCLEUS_H */

@@ -1,4 +1,5 @@
 #include <linux/list.h>
+#include <linux/hashtable.h>
 #include <linux/memcontrol.h>
 #include <linux/mempolicy.h>
 #include <linux/mmzone.h>
@@ -8,159 +9,28 @@
 
 #include <linux/nucleus.h>
 
-struct nucleus_hugepage *nucleus_hugepages_list;
-struct list_head nucleus_basepages_list;
-unsigned long nucleus_hugepages_count;
+struct list_head nucleus_hugepages_deferred_list = LIST_HEAD_INIT(nucleus_hugepages_deferred_list);
+EXPORT_SYMBOL(nucleus_hugepages_deferred_list);
 
-EXPORT_SYMBOL(nucleus_hugepages_list);
-EXPORT_SYMBOL(nucleus_basepages_list);
-EXPORT_SYMBOL(nucleus_hugepages_count);
+#define NUCLEUS_HUGEPAGES_HASH_BITS 10
+// TODO: Create per-process hash tables
+DEFINE_HASHTABLE(nucleus_hugepages_hash, NUCLEUS_HUGEPAGES_HASH_BITS);
 
-static void add_to_nucleus_lists(struct list_head* page_list, struct list_head* lru_list_tmp) {
-	int i, idx, offset, count=0;
-	while (!list_empty(page_list)) {
-		struct page *page;
-		// pr_info("get page %d\n", count);
-		page = lru_to_page(page_list);
-		// pr_info("delete page %d from list\n", count);
-		list_del(&page->lru);
 
-		// pr_info("check for hugepage\n");
-		if (PageTransHuge(page)) {
-			// pr_info("hugepage\n");
-			struct nucleus_hugepage *hp = &nucleus_hugepages_list[nucleus_hugepages_count++];
-			struct page *meta = get_meta_page(page);
-			hp->merge_in_hp = false;
-			hp->access_freq = meta->total_accesses;
-			hp->access_freq_to_move_in = 0;
-			hp->num_to_move_in = 0;
-			hp->list_per_hp = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
-			if (!hp->list_per_hp) {
-				pr_err("Failed to allocate memory for list_per_hp\n");
-				continue;
-			}
-			for (i = 0; i < HPAGE_PMD_NR; i++) {
-				struct nucleus_basepage *bp = &hp->list_per_hp[i];
-				bp->place_in_def = false;
-				idx = 4 + i / 4;
-				offset = i % 4;
-				bp->access_freq = page[idx].compound_pginfo[offset].total_accesses;
-				bp->page = nth_page(page, i);
-				bp->hp = hp;
-				// pr_info("add basepage %d to all bp list\n", i);
-				list_add_tail(&bp->list_all_bp, &nucleus_basepages_list);
-				// pr_info("done add basepage %d to all bp list\n", i);
-			}
-			// pr_info("done adding hp and bp\n");
-		}
-		// pr_info("add page %d to lru list\n", count);
+struct nucleus_hugepage *get_nucleus_hugepage(unsigned long hp_vaddr)
+{
+	struct nucleus_hugepage *hp;
 
-		list_add_tail(&page->lru, lru_list_tmp);
-
-		// pr_info("done add page %d to lru list\n", count);
-		count++;
+	hash_for_each_possible(nucleus_hugepages_hash, hp, hash, hp_vaddr) {
+		if (hp->address == hp_vaddr)
+			return hp;
 	}
+
+	return NULL;
 }
 
-static void process_lru_list(struct pglist_data *pgdat, struct lruvec *lruvec, enum lru_list lru) {
-	unsigned long nr_to_scan, scan, nr_scanned = 0, nr_taken;
-	LIST_HEAD(page_list);
-	LIST_HEAD(lru_list_tmp);
-	pr_info("lruvec lru size for lru %d\n", lru);
-	nr_to_scan = lruvec_lru_size(lruvec, lru, MAX_NR_ZONES);
-	pr_info("lruvec lru size for lru %d: %lu\n", lru, nr_to_scan);
-
-	while (nr_scanned < nr_to_scan) {
-		scan = nr_to_scan >> 2;	// isolate 25% pages from the lru list
-		if (!scan) {
-			scan = nr_to_scan;
-		}
-
-		pr_info("scanning %lu out of %lu pages\n", scan, nr_to_scan);
-
-		spin_lock_irq(&lruvec->lru_lock);
-		// pr_info("isolate lru pages\n");
-		nr_taken = isolate_lru_pages(scan, lruvec, lru, &page_list, 0);
-		// pr_info("mod node page state\n");
-		__mod_node_page_state(pgdat, NR_ISOLATED_ANON, nr_taken);
-		// pr_info("done mod node page state\n");
-		spin_unlock_irq(&lruvec->lru_lock);
-
-		pr_info("add to nucleus lists\n");
-		add_to_nucleus_lists(&page_list, &lru_list_tmp);
-		pr_info("done add to nucleus lists\n");
-
-		spin_lock_irq(&lruvec->lru_lock);
-		// pr_info("move pages to lru\n");
-		move_pages_to_lru(lruvec, &lru_list_tmp);
-		// pr_info("mod node page state\n");
-		__mod_node_page_state(pgdat, NR_ISOLATED_ANON, -nr_taken);
-		// pr_info("done mod node page state\n");
-		spin_unlock_irq(&lruvec->lru_lock);
-
-		nr_scanned += nr_taken;
-	}
+void insert_to_nucleus_hugepages_hash(struct nucleus_hugepage *hp, unsigned long hp_vaddr)
+{
+	hp->address = hp_vaddr;
+	hash_add(nucleus_hugepages_hash, &hp->hash, hp_vaddr);
 }
-
-void create_nucleus_input_lists() {
-	int nid;
-	struct pglist_data *pgdat;
-	struct mem_cgroup_per_node *pn;
-	struct mem_cgroup *memcg;
-	struct lruvec *lruvec;
-	unsigned long lruvec_size = 0, num_hugepages = 0;
-
-	for_each_node_state(nid, N_MEMORY) {
-		pgdat = NODE_DATA(nid);
-		// Considering only one memcg per node
-		// TODO: Change this to support multiple memcgs per node
-		pn = next_memcg_cand(pgdat);
-		if (!pn) {
-			continue;
-		}
-
-		memcg = pn->memcg;
-		if (!memcg || !memcg->htmm_enabled) {
-			continue;
-		}
-
-		lruvec = mem_cgroup_lruvec(memcg, pgdat);
-		lruvec_size += lruvec_lru_size(lruvec, LRU_ACTIVE_ANON, MAX_NR_ZONES);
-		lruvec_size += lruvec_lru_size(lruvec, LRU_INACTIVE_ANON, MAX_NR_ZONES);
-	}
-
-	num_hugepages = lruvec_size / HPAGE_PMD_NR;
-	if (!num_hugepages) {
-		pr_info("No pages to scan\n");
-		return;
-	}
-
-	nucleus_hugepages_list = vzalloc(num_hugepages * sizeof(struct nucleus_hugepage));
-	if (!nucleus_hugepages_list) {
-		pr_err("Failed to allocate memory for nucleus_hugepages_list\n");
-		return;
-	}
-	INIT_LIST_HEAD(&nucleus_basepages_list);
-	nucleus_hugepages_count = 0;
-
-	for_each_node_state(nid, N_MEMORY) {
-		pgdat = NODE_DATA(nid);	
-		// Considering only one memcg per node
-		// TODO: Change this to support multiple memcgs per node
-		pn = next_memcg_cand(pgdat);
-		if (!pn) {
-			continue;
-		}
-
-		memcg = pn->memcg;
-		if (!memcg || !memcg->htmm_enabled) {
-			continue;
-		}
-
-		lruvec = mem_cgroup_lruvec(memcg, pgdat);
-		process_lru_list(pgdat, lruvec, LRU_ACTIVE_ANON);
-		process_lru_list(pgdat, lruvec, LRU_INACTIVE_ANON);
-	}
-}
-
-EXPORT_SYMBOL(create_nucleus_input_lists);
