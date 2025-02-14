@@ -25,6 +25,11 @@
 
 #define INIT_PASID	0
 
+
+#ifdef CONFIG_NUCLEUS
+#define NUCLEUS_HUGEPAGES_HASH_BITS 10
+#endif
+
 struct address_space;
 struct mem_cgroup;
 
@@ -607,6 +612,10 @@ struct mm_struct {
 
 #ifdef CONFIG_HTMM
 		bool htmm_enabled;
+#endif
+
+#ifdef CONFIG_NUCLEUS
+		struct hlist_head nucleus_hugepages_hash[NUCLEUS_HUGEPAGES_HASH_BITS];
 #endif
 	} __randomize_layout;
 

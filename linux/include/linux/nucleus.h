@@ -2,7 +2,7 @@
 #define _LINUX_NUCLEUS_H
 
 #include <linux/list.h>
-
+#include <linux/mm_types.h>
 
 struct nucleus_hugepage {
 	// Initialized by sampling thread on first access
@@ -38,7 +38,8 @@ struct nucleus_basepage {
 
 extern struct list_head nucleus_hugepages_deferred_list;
 
-struct nucleus_hugepage *get_nucleus_hugepage(unsigned long hp_vaddr);
-void insert_to_nucleus_hugepages_hash(struct nucleus_hugepage *hp, unsigned long hp_vaddr);
+void nucleus_mm_init(struct mm_struct *mm);
+struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr);
+void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp);
 
 #endif /* _LINUX_NUCLEUS_H */

@@ -907,7 +907,7 @@ static void update_base_page(struct vm_area_struct *vma,
 	move_page_to_inactive_lru(page);
 }
 
-static void update_huge_page(struct vm_area_struct *vma, pmd_t *pmd,
+static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, pmd_t *pmd,
 	struct page *page, unsigned long address)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(vma->vm_mm);
@@ -919,16 +919,16 @@ static void update_huge_page(struct vm_area_struct *vma, pmd_t *pmd,
 	unsigned long hp_vaddr = address >> HPAGE_PMD_SHIFT;
 	unsigned long bp_offset = (address & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
 	int i;
-	struct nucleus_hugepage *hp = get_nucleus_hugepage(hp_vaddr);
+	struct nucleus_hugepage *hp = get_nucleus_hugepage(mm, hp_vaddr);
 	struct nucleus_basepage *bp;
 	if (!hp) {
 		hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
 		if (!hp) {
-			pr_err("Failed to allocate memory for nucleus hugepage\n");
+			pr_err("nucleus: failed to allocate memory for hp\n");
 			return;
 		}
-		pr_info("created hp %lx\n", hp_vaddr);
-		insert_to_nucleus_hugepages_hash(hp, hp_vaddr);
+		pr_info("nucleus: created hp %lx\n", hp_vaddr);
+		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
 		list_add_tail(&hp->list, &nucleus_hugepages_deferred_list);
 		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 		for (i = 0; i < HPAGE_PMD_NR; i++) {
@@ -1060,7 +1060,7 @@ pte_unlock:
     return ret;
 }
 
-static int __update_pmd_pginfo(struct vm_area_struct *vma, pud_t *pud,
+static int __update_pmd_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, pud_t *pud,
 				unsigned long address)
 {
     pmd_t *pmd, pmdval;
@@ -1093,7 +1093,7 @@ static int __update_pmd_pginfo(struct vm_area_struct *vma, pud_t *pud,
 	    goto pmd_unlock;
 	}
 
-	update_huge_page(vma, pmd, page, address);
+	update_huge_page(mm, vma, pmd, page, address);
 	if (htmm_cxl_mode) {
 	    if (page_to_nid(page) == HTMM_CXL_LOCAL_NUMA)
 		return 1;
@@ -1114,7 +1114,7 @@ pmd_unlock:
     return __update_pte_pginfo(vma, pmd, address);
 }
 
-static int __update_pginfo(struct vm_area_struct *vma, unsigned long address)
+static int __update_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, unsigned long address)
 {
     pgd_t *pgd;
     p4d_t *p4d;
@@ -1132,7 +1132,7 @@ static int __update_pginfo(struct vm_area_struct *vma, unsigned long address)
     if (pud_none_or_clear_bad(pud))
 	return 0;
     
-    return __update_pmd_pginfo(vma, pud, address);
+    return __update_pmd_pginfo(mm, vma, pud, address);
 }
 
 static void set_memcg_split_thres(struct mem_cgroup *memcg)
@@ -1400,7 +1400,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
 	goto mmap_unlock;
     
     /* increase sample counts only for valid records */
-    ret = __update_pginfo(vma, address);
+    ret = __update_pginfo(mm, vma, address);
     if (ret == 1) { /* memory accesses to DRAM */
 	memcg->nr_sampled++;
 	memcg->nr_sampled_for_split++;

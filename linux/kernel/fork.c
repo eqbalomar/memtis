@@ -98,6 +98,7 @@
 #include <linux/io_uring.h>
 #include <linux/bpf.h>
 #include <linux/htmm.h>
+#include <linux/nucleus.h>
 
 #include <asm/pgalloc.h>
 #include <linux/uaccess.h>
@@ -1065,6 +1066,9 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 #endif
 #ifdef CONFIG_HTMM
 	htmm_mm_init(mm);
+#endif
+#ifdef CONFIG_NUCLEUS
+	nucleus_mm_init(mm);
 #endif
 	mm_init_uprobes_state(mm);
 	hugetlb_count_init(mm);
