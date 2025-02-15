@@ -930,6 +930,7 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 			return;
 		}
 		pr_info("nucleus: created hp %lx\n", hp_vaddr);
+		INIT_LIST_HEAD(&hp->list);
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
 		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
 		if (!req) {
@@ -946,6 +947,7 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 			bp = &hp->bp_list[i];
 			bp->hp = hp;
 			bp->access_freq = 0;
+			INIT_LIST_HEAD(&bp->list);
 		}
 	}
 
