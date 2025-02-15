@@ -9,8 +9,13 @@
 
 #include <linux/nucleus.h>
 
-struct list_head nucleus_hugepages_deferred_list = LIST_HEAD_INIT(nucleus_hugepages_deferred_list);
-EXPORT_SYMBOL(nucleus_hugepages_deferred_list);
+struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue;
+EXPORT_SYMBOL(nucleus_hugepages_deferred_queue);
+
+void init_deferred_nucleus_request_queue() {
+	spin_lock_init(&nucleus_hugepages_deferred_queue.request_queue_lock);
+	INIT_LIST_HEAD(&nucleus_hugepages_deferred_queue.request_queue);
+}
 
 void nucleus_mm_init(struct mm_struct *mm)
 {
@@ -30,6 +35,7 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	struct hlist_node *tmp;
 	struct deferred_nucleus_request *req;
 	int bkt;
+	unsigned long flags;
 
     if (!memcg || !memcg->htmm_enabled) {
 		return;
@@ -44,7 +50,9 @@ void nucleus_mm_exit(struct mm_struct *mm)
 		}
 		req->hp = hp;
 		req->type = NUCLEUS_REMOVE_HUGEPAGE;
-		list_add_tail(&req->list, &nucleus_hugepages_deferred_list);
+		spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+		list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
+		spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
 	}
 }
 

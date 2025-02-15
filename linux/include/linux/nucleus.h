@@ -48,8 +48,14 @@ struct deferred_nucleus_request {
 	enum nucleus_request_type type;
 };
 
-extern struct list_head nucleus_hugepages_deferred_list;
+struct deferred_nucleus_request_queue {
+	spinlock_t request_queue_lock;
+	struct list_head request_queue;
+};
 
+extern struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue;
+
+void init_deferred_nucleus_request_queue(void);
 void nucleus_mm_init(struct mm_struct *mm);
 void nucleus_mm_exit(struct mm_struct *mm);
 struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr);

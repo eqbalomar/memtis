@@ -12,6 +12,7 @@
 #include "../kernel/events/internal.h"
 
 #include <linux/htmm.h>
+#include <linux/nucleus.h>
 
 struct task_struct *access_sampling = NULL;
 struct perf_event ***mem_event = NULL;
@@ -440,6 +441,8 @@ int ksamplingd_init(pid_t pid, int node)
 	printk("htmm__perf_event_init failure... ERROR:%d\n", ret);
 	return 0;
     }
+
+	init_deferred_nucleus_request_queue();
 
     return ksamplingd_run();
 }

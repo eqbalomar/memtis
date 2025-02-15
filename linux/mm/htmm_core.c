@@ -919,6 +919,7 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 	unsigned long hp_vaddr = address >> HPAGE_PMD_SHIFT;
 	unsigned long bp_offset = (address & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
 	int i;
+	unsigned long flags;
 	struct nucleus_hugepage *hp = get_nucleus_hugepage(mm, hp_vaddr);
 	struct nucleus_basepage *bp;
 	struct deferred_nucleus_request *req;
@@ -937,7 +938,9 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 		}
 		req->hp = hp;
 		req->type = NUCLEUS_ADD_HUGEPAGE;
-		list_add_tail(&req->list, &nucleus_hugepages_deferred_list);
+		spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+		list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
+		spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
 		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 		for (i = 0; i < HPAGE_PMD_NR; i++) {
 			bp = &hp->bp_list[i];
