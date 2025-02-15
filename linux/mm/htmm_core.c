@@ -921,6 +921,7 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 	int i;
 	struct nucleus_hugepage *hp = get_nucleus_hugepage(mm, hp_vaddr);
 	struct nucleus_basepage *bp;
+	struct deferred_nucleus_request *req;
 	if (!hp) {
 		hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
 		if (!hp) {
@@ -929,7 +930,14 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 		}
 		pr_info("nucleus: created hp %lx\n", hp_vaddr);
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
-		list_add_tail(&hp->list, &nucleus_hugepages_deferred_list);
+		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
+		if (!req) {
+			pr_err("nucleus: failed to allocate memory for req\n");
+			return;
+		}
+		req->hp = hp;
+		req->type = NUCLEUS_ADD_HUGEPAGE;
+		list_add_tail(&req->list, &nucleus_hugepages_deferred_list);
 		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 		for (i = 0; i < HPAGE_PMD_NR; i++) {
 			bp = &hp->bp_list[i];

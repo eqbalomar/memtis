@@ -23,13 +23,39 @@ void nucleus_mm_init(struct mm_struct *mm)
 	hash_init(mm->nucleus_hugepages_hash);
 }
 
+void nucleus_mm_exit(struct mm_struct *mm)
+{
+    struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
+	struct nucleus_hugepage *hp;
+	struct hlist_node *tmp;
+	struct deferred_nucleus_request *req;
+	int bkt;
+
+    if (!memcg || !memcg->htmm_enabled) {
+		return;
+    }
+
+	hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
+		hash_del(&hp->hash);
+		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
+		if (!req) {
+			pr_err("nucleus: failed to allocate memory for req\n");
+			return;
+		}
+		req->hp = hp;
+		req->type = NUCLEUS_REMOVE_HUGEPAGE;
+		list_add_tail(&req->list, &nucleus_hugepages_deferred_list);
+	}
+}
+
 struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
 {
 	struct nucleus_hugepage *hp;
 
 	hash_for_each_possible(mm->nucleus_hugepages_hash, hp, hash, hp_vaddr) {
-		if (hp->address == hp_vaddr)
+		if (hp->address == hp_vaddr) {
 			return hp;
+		}
 	}
 
 	return NULL;

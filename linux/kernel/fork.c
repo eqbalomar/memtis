@@ -1096,6 +1096,9 @@ fail_nopgd:
 #ifdef CONFIG_HTMM
 	htmm_mm_exit(mm);
 #endif
+#ifdef CONFIG_NUCLEUS
+	nucleus_mm_exit(mm);
+#endif
 	free_mm(mm);
 	return NULL;
 }
@@ -1124,6 +1127,9 @@ static inline void __mmput(struct mm_struct *mm)
 	ksm_exit(mm);
 #ifdef CONFIG_HTMM
 	htmm_mm_exit(mm);
+#endif
+#ifdef CONFIG_NUCLEUS
+	nucleus_mm_exit(mm);
 #endif
 	khugepaged_exit(mm); /* must run before exit_mmap */
 	exit_mmap(mm);

@@ -10,9 +10,10 @@ struct nucleus_hugepage {
 	unsigned long address;	// virtual address
 	struct nucleus_basepage *bp_list;
 	struct hlist_node hash; // hlist_node for adding to hash table
-	struct list_head list;	// list head for adding to list of all hugepages
 	
 	// Fields used within algorithm
+	struct list_head list;	// list head for adding to list of all hugepages
+	unsigned int access_freq;
 	unsigned int access_freq_to_move_in;
 	unsigned int num_to_move_in;
 
@@ -36,9 +37,21 @@ struct nucleus_basepage {
 };
 
 
+enum nucleus_request_type {
+	NUCLEUS_ADD_HUGEPAGE,
+	NUCLEUS_REMOVE_HUGEPAGE,
+};
+
+struct deferred_nucleus_request {
+	struct nucleus_hugepage *hp;
+	struct list_head list;
+	enum nucleus_request_type type;
+};
+
 extern struct list_head nucleus_hugepages_deferred_list;
 
 void nucleus_mm_init(struct mm_struct *mm);
+void nucleus_mm_exit(struct mm_struct *mm);
 struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr);
 void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp);
 
