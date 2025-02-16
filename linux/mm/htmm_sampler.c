@@ -442,7 +442,7 @@ int ksamplingd_init(pid_t pid, int node)
 	return 0;
     }
 
-	init_deferred_nucleus_request_queue();
+	// init_deferred_nucleus_request_queue();
 
     return ksamplingd_run();
 }

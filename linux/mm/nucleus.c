@@ -9,22 +9,27 @@
 
 #include <linux/nucleus.h>
 
-struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue;
+struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue = {
+	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_hugepages_deferred_queue.request_queue_lock),
+	.request_queue = LIST_HEAD_INIT(nucleus_hugepages_deferred_queue.request_queue),
+};
 EXPORT_SYMBOL(nucleus_hugepages_deferred_queue);
 
-void init_deferred_nucleus_request_queue() {
-	spin_lock_init(&nucleus_hugepages_deferred_queue.request_queue_lock);
-	INIT_LIST_HEAD(&nucleus_hugepages_deferred_queue.request_queue);
-}
+// void init_deferred_nucleus_request_queue() {
+// 	spin_lock_init(&nucleus_hugepages_deferred_queue.request_queue_lock);
+// 	INIT_LIST_HEAD(&nucleus_hugepages_deferred_queue.request_queue);
+// }
 
 void nucleus_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
+	pr_info("nucleus: mm_init\n");
 
     if (!memcg || !memcg->htmm_enabled) {
 		return;
     }
 
+	pr_info("nucleus: hash_init\n");
 	hash_init(mm->nucleus_hugepages_hash);
 }
 
@@ -36,12 +41,15 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	struct deferred_nucleus_request *req;
 	int bkt;
 	unsigned long flags;
+	pr_info("nucleus: mm_exit\n");
 
     if (!memcg || !memcg->htmm_enabled) {
 		return;
     }
 
+	pr_info("nucleus: hash_del\n");
 	hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
+		pr_info("nucleus: hash_del hp %lx\n", hp->address);
 		hash_del(&hp->hash);
 		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
 		if (!req) {
