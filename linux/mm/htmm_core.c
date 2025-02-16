@@ -932,6 +932,17 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 		pr_info("nucleus: created hp %lx\n", hp_vaddr);
 		INIT_LIST_HEAD(&hp->list);
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
+		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
+		if (!hp->bp_list) {
+			pr_err("nucleus: failed to allocate memory for bp_list\n");
+			return;
+		}
+		for (i = 0; i < HPAGE_PMD_NR; i++) {
+			bp = &hp->bp_list[i];
+			bp->hp = hp;
+			bp->access_freq = 0;
+			INIT_LIST_HEAD(&bp->list);
+		}
 		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
 		if (!req) {
 			pr_err("nucleus: failed to allocate memory for req\n");
@@ -942,17 +953,10 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 		spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
 		list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
 		spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
-		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
-		for (i = 0; i < HPAGE_PMD_NR; i++) {
-			bp = &hp->bp_list[i];
-			bp->hp = hp;
-			bp->access_freq = 0;
-			INIT_LIST_HEAD(&bp->list);
-		}
 	}
 
 	bp = &hp->bp_list[bp_offset];
-	bp->access_freq++;
+	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + 1);
 	pr_info("nucleus: hp %lx, bp %lu, access_freq %u\n", hp_vaddr, bp_offset, bp->access_freq);
 
     meta_page = get_meta_page(page);

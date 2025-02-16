@@ -23,13 +23,13 @@ EXPORT_SYMBOL(nucleus_hugepages_deferred_queue);
 void nucleus_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
-	pr_info("nucleus: mm_init\n");
+	// pr_info("nucleus: mm_init\n");
 
     if (!memcg || !memcg->htmm_enabled) {
 		return;
     }
 
-	pr_info("nucleus: hash_init\n");
+	pr_info("nucleus: hash_init for mm %p, htmm_enabled %d\n", mm, mm->htmm_enabled);
 	hash_init(mm->nucleus_hugepages_hash);
 }
 
@@ -41,13 +41,13 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	struct deferred_nucleus_request *req;
 	int bkt;
 	unsigned long flags;
-	pr_info("nucleus: mm_exit\n");
+	// pr_info("nucleus: mm_exit\n");
 
     if (!memcg || !memcg->htmm_enabled) {
 		return;
     }
 
-	pr_info("nucleus: hash_del\n");
+	pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_emtpy: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 	hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
 		pr_info("nucleus: hash_del hp %lx\n", hp->address);
 		hash_del(&hp->hash);
