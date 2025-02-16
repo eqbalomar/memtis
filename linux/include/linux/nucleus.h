@@ -54,9 +54,11 @@ struct deferred_nucleus_request_queue {
 	struct list_head request_queue;
 };
 
+extern unsigned long nucleus_def_tier_size;
 extern struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue;
 
 // void init_deferred_nucleus_request_queue(void);
+void nucleus_init_def_tier_size(void);
 void nucleus_mm_init(struct mm_struct *mm);
 void nucleus_mm_exit(struct mm_struct *mm);
 struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr);

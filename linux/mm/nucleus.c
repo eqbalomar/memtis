@@ -9,6 +9,9 @@
 
 #include <linux/nucleus.h>
 
+unsigned long nucleus_def_tier_size = 0;
+EXPORT_SYMBOL(nucleus_def_tier_size);
+
 struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue = {
 	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_hugepages_deferred_queue.request_queue_lock),
 	.request_queue = LIST_HEAD_INIT(nucleus_hugepages_deferred_queue.request_queue),
@@ -20,6 +23,20 @@ EXPORT_SYMBOL(nucleus_hugepages_deferred_queue);
 // 	INIT_LIST_HEAD(&nucleus_hugepages_deferred_queue.request_queue);
 // }
 
+void nucleus_init_def_tier_size()
+{
+	struct pglist_data *pgdat;
+	struct mem_cgroup_per_node *pn;
+	int nid = HTMM_CXL_LOCAL_NUMA;
+
+	pgdat = NODE_DATA(nid);
+	pn = next_memcg_cand(pgdat);
+	if (!pn) {
+		return;
+	}
+	WRITE_ONCE(nucleus_def_tier_size, pn->max_nr_base_pages);
+}
+
 void nucleus_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
@@ -29,7 +46,7 @@ void nucleus_mm_init(struct mm_struct *mm)
 		return;
     }
 
-	pr_info("nucleus: hash_init for mm %p, htmm_enabled %d\n", mm, mm->htmm_enabled);
+	// pr_info("nucleus: hash_init for mm %p, htmm_enabled %d\n", mm, mm->htmm_enabled);
 	hash_init(mm->nucleus_hugepages_hash);
 }
 
@@ -47,7 +64,7 @@ void nucleus_mm_exit(struct mm_struct *mm)
 		return;
     }
 
-	pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_emtpy: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
+	// pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_emtpy: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 	hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
 		pr_info("nucleus: hash_del hp %lx\n", hp->address);
 		hash_del(&hp->hash);
