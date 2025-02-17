@@ -145,7 +145,8 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 static void perform_cooling(struct mem_cgroup *memcg, struct nucleus_hugepage *hp)
 {
     int i, diff;
-    unsigned int memcg_cclock, access_freq;
+    unsigned int memcg_cclock;
+	unsigned long access_freq;
 
     spin_lock(&memcg->access_lock);
     /* check cooling */

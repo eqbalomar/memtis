@@ -16,9 +16,9 @@ struct nucleus_hugepage {
 	
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all hugepages
-	unsigned int algo_access_freq;
-	unsigned int algo_access_freq_to_move_in;
-	unsigned int algo_num_to_move_in;
+	unsigned long algo_access_freq;
+	unsigned long algo_access_freq_to_move_in;
+	unsigned long algo_num_to_move_in;
 
 	// Output of algorithm
 	bool merge_in_hp;
@@ -29,11 +29,11 @@ struct nucleus_basepage {
 	struct nucleus_hugepage *hp;
 
 	// Updated by sampling thread on each access/cooling
-	unsigned int access_freq;
+	unsigned long access_freq;
 
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all basepages
-	unsigned int algo_access_freq;
+	unsigned long algo_access_freq;
 
 	// Output of algorithm
 	bool place_in_def;
