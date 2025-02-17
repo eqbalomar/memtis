@@ -184,5 +184,5 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 
 	bp = &hp->bp_list[bp_offset];
 	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + 1);
-	pr_info("nucleus: hp %lx, bp %lu, access_freq %u\n", hp_vaddr, bp_offset, bp->access_freq);
+	// pr_info("nucleus: hp %lx, bp %lu, access_freq %u\n", hp_vaddr, bp_offset, bp->access_freq);
 }

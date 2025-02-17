@@ -209,9 +209,6 @@ static inline unsigned int decrease_sample_period(unsigned int cur,
 extern unsigned long get_nr_lru_pages_node(struct mem_cgroup *memcg, pg_data_t *pgdat);
 extern void add_memcg_to_kmigraterd(struct mem_cgroup *memcg, int nid);
 extern void del_memcg_from_kmigraterd(struct mem_cgroup *memcg, int nid);
-extern unsigned long isolate_lru_pages(unsigned long nr_to_scan,
-	struct lruvec *lruvec, enum lru_list lru, struct list_head *dst,
-	isolate_mode_t mode);
 extern struct mem_cgroup_per_node *next_memcg_cand(pg_data_t *pgdat);
 extern unsigned long get_memcg_demotion_watermark(unsigned long max_nr_pages);
 extern unsigned long get_memcg_promotion_watermark(unsigned long max_nr_pages);

@@ -267,7 +267,7 @@ static __always_inline void update_lru_sizes(struct lruvec *lruvec,
     }
 }
 
-unsigned long isolate_lru_pages(unsigned long nr_to_scan,
+static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 	struct lruvec *lruvec, enum lru_list lru, struct list_head *dst,
 	isolate_mode_t mode)
 {

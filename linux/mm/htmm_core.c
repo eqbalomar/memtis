@@ -856,15 +856,12 @@ lru_unlock:
 	BUG();
 }
 
-static void update_base_page(struct mm_struct *mm, struct vm_area_struct *vma,
-	struct page *page, pginfo_t *pginfo, unsigned long address)
+static void update_base_page(struct vm_area_struct *vma,
+	struct page *page, pginfo_t *pginfo)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(vma->vm_mm);
     unsigned long prev_accessed, prev_idx, cur_idx;
     bool hot;
-
-	pr_info("nucleus: update potential hugepage\n");
-	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
     /* check cooling status and perform cooling if the page needs to be cooled */
     check_base_cooling(pginfo, page, false);
@@ -910,7 +907,7 @@ static void update_base_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	move_page_to_inactive_lru(page);
 }
 
-static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, pmd_t *pmd,
+static void update_huge_page(struct vm_area_struct *vma, pmd_t *pmd,
 	struct page *page, unsigned long address)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(vma->vm_mm);
@@ -919,9 +916,6 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
     unsigned long prev_idx, cur_idx;
     bool hot, pg_split = false;
     unsigned long pginfo_prev;
-
-	pr_info("nucleus: update actual hugepage\n");
-	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
     meta_page = get_meta_page(page);
     pginfo = get_compound_pginfo(page, address);
@@ -934,8 +928,6 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
     pginfo->total_accesses += HPAGE_PMD_NR;
     
     meta_page->total_accesses++;
-
-	
 
 #ifndef DEFERRED_SPLIT_ISOLATED
     if (check_split_huge_page(memcg, meta_page, false)) {
@@ -992,7 +984,7 @@ static void update_huge_page(struct mm_struct *mm, struct vm_area_struct *vma, p
 	move_page_to_inactive_lru(page);
 }
 
-static int __update_pte_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, pmd_t *pmd,
+static int __update_pte_pginfo(struct vm_area_struct *vma, pmd_t *pmd,
 				unsigned long address)
 {
     pte_t *pte, ptent;
@@ -1021,7 +1013,7 @@ static int __update_pte_pginfo(struct mm_struct *mm, struct vm_area_struct *vma,
     if (!pginfo)
 	goto pte_unlock;
 
-    update_base_page(mm, vma, page, pginfo, address);
+    update_base_page(vma, page, pginfo);
     pte_unmap_unlock(pte, ptl);
     if (htmm_cxl_mode) {
 	if (page_to_nid(page) == HTMM_CXL_LOCAL_NUMA)
@@ -1041,7 +1033,7 @@ pte_unlock:
     return ret;
 }
 
-static int __update_pmd_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, pud_t *pud,
+static int __update_pmd_pginfo(struct vm_area_struct *vma, pud_t *pud,
 				unsigned long address)
 {
     pmd_t *pmd, pmdval;
@@ -1074,7 +1066,7 @@ static int __update_pmd_pginfo(struct mm_struct *mm, struct vm_area_struct *vma,
 	    goto pmd_unlock;
 	}
 
-	update_huge_page(mm, vma, pmd, page, address);
+	update_huge_page(vma, pmd, page, address);
 	if (htmm_cxl_mode) {
 	    if (page_to_nid(page) == HTMM_CXL_LOCAL_NUMA)
 		return 1;
@@ -1092,10 +1084,10 @@ pmd_unlock:
     }
 
     /* base page */
-    return __update_pte_pginfo(mm, vma, pmd, address);
+    return __update_pte_pginfo(vma, pmd, address);
 }
 
-static int __update_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, unsigned long address)
+static int __update_pginfo(struct vm_area_struct *vma, unsigned long address)
 {
     pgd_t *pgd;
     p4d_t *p4d;
@@ -1113,7 +1105,7 @@ static int __update_pginfo(struct mm_struct *mm, struct vm_area_struct *vma, uns
     if (pud_none_or_clear_bad(pud))
 	return 0;
     
-    return __update_pmd_pginfo(mm, vma, pud, address);
+    return __update_pmd_pginfo(vma, pud, address);
 }
 
 static void set_memcg_split_thres(struct mem_cgroup *memcg)
@@ -1380,8 +1372,10 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
     if (!memcg || !memcg->htmm_enabled)
 	goto mmap_unlock;
     
+	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
+
     /* increase sample counts only for valid records */
-    ret = __update_pginfo(mm, vma, address);
+    ret = __update_pginfo(vma, address);
     if (ret == 1) { /* memory accesses to DRAM */
 	memcg->nr_sampled++;
 	memcg->nr_sampled_for_split++;
