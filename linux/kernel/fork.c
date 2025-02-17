@@ -698,6 +698,10 @@ void __mmdrop(struct mm_struct *mm)
 	BUG_ON(mm == &init_mm);
 	WARN_ON_ONCE(mm == current->mm);
 	WARN_ON_ONCE(mm == current->active_mm);
+#ifdef CONFIG_NUCLEUS
+	pr_info("nucleus: __mmdrop mm_exit\n");
+	nucleus_mm_exit(mm);
+#endif
 	mm_free_pgd(mm);
 	destroy_context(mm);
 	mmu_notifier_subscriptions_destroy(mm);
@@ -1097,6 +1101,7 @@ fail_nopgd:
 	htmm_mm_exit(mm);
 #endif
 #ifdef CONFIG_NUCLEUS
+	pr_info("nucleus: mm_init fail_nopgd mm_exit\n");
 	nucleus_mm_exit(mm);
 #endif
 	free_mm(mm);
@@ -1129,6 +1134,7 @@ static inline void __mmput(struct mm_struct *mm)
 	htmm_mm_exit(mm);
 #endif
 #ifdef CONFIG_NUCLEUS
+	pr_info("nucleus: __mmput mm_exit\n");
 	nucleus_mm_exit(mm);
 #endif
 	khugepaged_exit(mm); /* must run before exit_mmap */
@@ -1151,6 +1157,10 @@ static inline void __mmput(struct mm_struct *mm)
 void mmput(struct mm_struct *mm)
 {
 	might_sleep();
+#ifdef CONFIG_NUCLEUS
+	pr_info("nucleus: mmput mm_exit\n");
+	nucleus_mm_exit(mm);
+#endif
 
 	if (atomic_dec_and_test(&mm->mm_users))
 		__mmput(mm);
@@ -1436,6 +1446,10 @@ static void mm_release(struct task_struct *tsk, struct mm_struct *mm)
 void exit_mm_release(struct task_struct *tsk, struct mm_struct *mm)
 {
 	futex_exit_release(tsk);
+#ifdef CONFIG_NUCLEUS
+	pr_info("nucleus: exit_mm_release mm_exit\n");
+	nucleus_mm_exit(mm);
+#endif
 	mm_release(tsk, mm);
 }
 
