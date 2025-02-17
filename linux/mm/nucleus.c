@@ -60,7 +60,7 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	unsigned long flags;
 	// pr_info("nucleus: mm_exit\n");
 
-	pr_info("nucleus: mm_exit for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
+	// pr_info("nucleus: mm_exit for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 
     if (!memcg || !memcg->htmm_enabled || !mm || !mm->htmm_enabled) {
 		return;

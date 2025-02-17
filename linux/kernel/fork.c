@@ -699,7 +699,6 @@ void __mmdrop(struct mm_struct *mm)
 	WARN_ON_ONCE(mm == current->mm);
 	WARN_ON_ONCE(mm == current->active_mm);
 #ifdef CONFIG_NUCLEUS
-	pr_info("nucleus: __mmdrop mm_exit\n");
 	nucleus_mm_exit(mm);
 #endif
 	mm_free_pgd(mm);
@@ -1100,10 +1099,6 @@ fail_nopgd:
 #ifdef CONFIG_HTMM
 	htmm_mm_exit(mm);
 #endif
-#ifdef CONFIG_NUCLEUS
-	pr_info("nucleus: mm_init fail_nopgd mm_exit\n");
-	nucleus_mm_exit(mm);
-#endif
 	free_mm(mm);
 	return NULL;
 }
@@ -1133,10 +1128,6 @@ static inline void __mmput(struct mm_struct *mm)
 #ifdef CONFIG_HTMM
 	htmm_mm_exit(mm);
 #endif
-#ifdef CONFIG_NUCLEUS
-	pr_info("nucleus: __mmput mm_exit\n");
-	nucleus_mm_exit(mm);
-#endif
 	khugepaged_exit(mm); /* must run before exit_mmap */
 	exit_mmap(mm);
 	mm_put_huge_zero_page(mm);
@@ -1157,10 +1148,6 @@ static inline void __mmput(struct mm_struct *mm)
 void mmput(struct mm_struct *mm)
 {
 	might_sleep();
-#ifdef CONFIG_NUCLEUS
-	pr_info("nucleus: mmput mm_exit\n");
-	nucleus_mm_exit(mm);
-#endif
 
 	if (atomic_dec_and_test(&mm->mm_users))
 		__mmput(mm);
@@ -1446,10 +1433,6 @@ static void mm_release(struct task_struct *tsk, struct mm_struct *mm)
 void exit_mm_release(struct task_struct *tsk, struct mm_struct *mm)
 {
 	futex_exit_release(tsk);
-#ifdef CONFIG_NUCLEUS
-	pr_info("nucleus: exit_mm_release mm_exit\n");
-	nucleus_mm_exit(mm);
-#endif
 	mm_release(tsk, mm);
 }
 
