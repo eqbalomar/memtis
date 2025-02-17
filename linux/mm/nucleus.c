@@ -39,10 +39,8 @@ void nucleus_init_def_tier_size()
 
 void nucleus_mm_init(struct mm_struct *mm)
 {
-    struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
 	// pr_info("nucleus: mm_init\n");
-
-    if (!memcg || !memcg->htmm_enabled || !mm || !mm->htmm_enabled) {
+    if (!mm || !mm->htmm_enabled) {
 		return;
     }
 
@@ -52,7 +50,6 @@ void nucleus_mm_init(struct mm_struct *mm)
 
 void nucleus_mm_exit(struct mm_struct *mm)
 {
-    struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
 	struct nucleus_hugepage *hp;
 	struct hlist_node *tmp;
 	struct deferred_nucleus_request *req;
@@ -60,27 +57,28 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	unsigned long flags;
 	// pr_info("nucleus: mm_exit\n");
 
-	// pr_info("nucleus: mm_exit for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
-
-    if (!memcg || !memcg->htmm_enabled || !mm || !mm->htmm_enabled) {
+	if (!mm || !mm->htmm_enabled) {
 		return;
-    }
+	}
 
 	pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
-	// hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
-	// 	pr_info("nucleus: hash_del hp %lx\n", hp->address);
-	// 	hash_del(&hp->hash);
-	// 	req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
-	// 	if (!req) {
-	// 		pr_err("nucleus: failed to allocate memory for req\n");
-	// 		return;
-	// 	}
-	// 	req->hp = hp;
-	// 	req->type = NUCLEUS_REMOVE_HUGEPAGE;
-	// 	spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
-	// 	list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
-	// 	spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
-	// }
+	if (!hash_empty(mm->nucleus_hugepages_hash)) {
+		pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
+		// hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
+		// 	pr_info("nucleus: hash_del hp %lx\n", hp->address);
+		// 	hash_del(&hp->hash);
+		// 	req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
+		// 	if (!req) {
+		// 		pr_err("nucleus: failed to allocate memory for req\n");
+		// 		return;
+		// 	}
+		// 	req->hp = hp;
+		// 	req->type = NUCLEUS_REMOVE_HUGEPAGE;
+		// 	spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+		// 	list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
+		// 	spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+		// }
+	}
 }
 
 static struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
@@ -178,7 +176,7 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 	struct nucleus_hugepage *hp;
 	struct nucleus_basepage *bp;
 
-	if (!memcg || !memcg->htmm_enabled || !mm || !mm->htmm_enabled) {
+	if (!mm || !mm->htmm_enabled) {
 		return;
 	}
 
