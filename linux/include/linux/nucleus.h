@@ -10,6 +10,9 @@ struct nucleus_hugepage {
 	unsigned long address;	// virtual address
 	struct nucleus_basepage *bp_list;
 	struct hlist_node hash; // hlist_node for adding to hash table
+
+	// Updated by sampling thread on each access/cooling
+	unsigned int cooling_clock;
 	
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all hugepages
@@ -27,7 +30,6 @@ struct nucleus_basepage {
 
 	// Updated by sampling thread on each access/cooling
 	unsigned int access_freq;
-	unsigned int cooling_clk;
 
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all basepages
@@ -61,8 +63,6 @@ extern struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue;
 void nucleus_init_def_tier_size(void);
 void nucleus_mm_init(struct mm_struct *mm);
 void nucleus_mm_exit(struct mm_struct *mm);
-struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr);
-void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp);
 void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, struct mm_struct *mm, unsigned long address);
 
 
