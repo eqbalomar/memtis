@@ -52,9 +52,7 @@ void nucleus_mm_exit(struct mm_struct *mm)
 {
 	struct nucleus_hugepage *hp;
 	struct hlist_node *tmp;
-	struct deferred_nucleus_request *req;
 	int bkt;
-	unsigned long flags;
 	// pr_info("nucleus: mm_exit\n");
 
 	if (!mm || !mm->htmm_enabled) {
@@ -67,16 +65,7 @@ void nucleus_mm_exit(struct mm_struct *mm)
 		hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
 			pr_info("nucleus: hash_del hp %lx\n", hp->address);
 			hash_del(&hp->hash);
-			req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
-			if (!req) {
-				pr_err("nucleus: failed to allocate memory for req\n");
-				return;
-			}
-			req->hp = hp;
-			req->type = NUCLEUS_REMOVE_HUGEPAGE;
-			spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
-			list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
-			spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+			atomic_dec(&hp->ref_count);
 		}
 	}
 }
@@ -116,7 +105,6 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 		}
 		pr_info("nucleus: created hp %lx\n", hp_vaddr);
 		INIT_LIST_HEAD(&hp->list);
-		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
 		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 		if (!hp->bp_list) {
 			pr_err("nucleus: failed to allocate memory for bp_list\n");
@@ -128,13 +116,15 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 			bp->access_freq = 0;
 			INIT_LIST_HEAD(&bp->list);
 		}
+		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
+		atomic_inc(&hp->ref_count);
+
 		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
 		if (!req) {
 			pr_err("nucleus: failed to allocate memory for req\n");
 			return NULL;
 		}
 		req->hp = hp;
-		req->type = NUCLEUS_ADD_HUGEPAGE;
 		spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
 		list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
 		spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);

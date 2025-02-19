@@ -5,13 +5,15 @@
 #include <linux/mm_types.h>
 
 struct nucleus_hugepage {
+	atomic_t ref_count;
+
 	// Initialized by sampling thread on first access
 	struct mm_struct *mm;
-	unsigned long address;	// virtual address
+	unsigned long address;	// hp-aligned virtual address
 	struct nucleus_basepage *bp_list;
 	struct hlist_node hash; // hlist_node for adding to hash table
 
-	// Updated by sampling thread on each access/cooling
+	// Updated by sampling thread on cooling
 	unsigned int cooling_clock;
 	
 	// Fields used within algorithm
@@ -28,27 +30,20 @@ struct nucleus_basepage {
 	// Initialized by sampling thread on first access
 	struct nucleus_hugepage *hp;
 
-	// Updated by sampling thread on each access/cooling
+	// Updated by sampling thread on each access
 	unsigned long access_freq;
 
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all basepages
-	unsigned long algo_access_freq;
+	unsigned long algo_access_freq;	// copy of access_freq for algorithm
 
 	// Output of algorithm
 	bool place_in_def;
 };
 
-
-enum nucleus_request_type {
-	NUCLEUS_ADD_HUGEPAGE,
-	NUCLEUS_REMOVE_HUGEPAGE,
-};
-
 struct deferred_nucleus_request {
 	struct nucleus_hugepage *hp;
 	struct list_head list;
-	enum nucleus_request_type type;
 };
 
 struct deferred_nucleus_request_queue {
