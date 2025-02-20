@@ -15,6 +15,9 @@ extern int colloid_nid_of_interest;
 extern unsigned long colloid_delta_p;
 extern unsigned long colloid_dynlimit;
 
+int app_num_cores = 1;
+module_param(app_num_cores, int, 0);
+
 #define CORE_MON 63
 #define LOG_SIZE 10000
 #define MIN_LOCAL_LAT 15

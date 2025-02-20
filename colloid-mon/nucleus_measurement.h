@@ -12,6 +12,17 @@
 #define LOCAL_NUMA 1
 #define WORKER_BUDGET 1000000
 
+#define WALK_COMPLETED_BP 0x0208    // DTLB_LOAD_MISSES.WALK_COMPLETED_4K
+#define WALK_COMPLETED_HP 0x0408    // DTLB_LOAD_MISSES.WALK_COMPLETED_2M_4M
+#define DTLB_LOADS 0x81D0           // MEM_INST_RETIRED.ALL_LOADS
+
+enum nucleus_events {
+    WALK_COMPLETED_BP_EVENT = 0,
+    WALK_COMPLETED_HP_EVENT = 1,
+    DTLB_LOADS_EVENT = 2,
+    N_NUCLEUS_EVENTS
+};
+
 extern int terminate_mon;
 int nucleus_measurement_init(void);
 void nucleus_measurement_exit(void);
