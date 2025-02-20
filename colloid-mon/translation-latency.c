@@ -21,6 +21,10 @@ static u64 *event_val_diff[N_NUCLEUS_EVENTS];
 
 static u64 event_val_total[N_NUCLEUS_EVENTS];
 
+u64 walk_completed_bp;
+u64 walk_completed_hp;
+u64 dtlb_loads;
+
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
 static unsigned long get_perf_event_config(enum nucleus_events e) {
@@ -81,7 +85,7 @@ static void perf_init(void) {
     }
 }
 
-u64 sample_perf_event_counter(struct perf_event *event) {
+static u64 sample_perf_event_counter(struct perf_event *event) {
     u64 event_val, *enabled, *running;
     if (!event) {
         return -1;
@@ -121,7 +125,16 @@ void thread_fun_poll_perf(struct work_struct *work) {
 
                 event_val_prev[event][core] = event_val_curr[event][core];
             }
-            pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
+            // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
+            if (event == WALK_COMPLETED_BP_EVENT) {
+                WRITE_ONCE(walk_completed_bp, event_val_total[event]);
+            }
+            else if (event == WALK_COMPLETED_HP_EVENT) {
+                WRITE_ONCE(walk_completed_hp, event_val_total[event]);
+            }
+            else if (event == DTLB_LOADS_EVENT) {
+                WRITE_ONCE(dtlb_loads, event_val_total[event]);
+            }
         }
 
         budget--;
