@@ -8,14 +8,7 @@
 #include <linux/mm.h>
 #include <linux/htmm.h>
 #include <linux/delay.h>
-
-// #define SPINPOLL // TODO: configure this
-#define SAMPLE_INTERVAL_MS 10 // Only used if SPINPOLL is not set
-#ifdef SPINPOLL
-#define EWMA_EXP 5
-#else
-#define EWMA_EXP 4
-#endif
+#include "nucleus_measurement.h"
 
 extern int colloid_local_lat_gt_remote;
 extern int colloid_nid_of_interest;
@@ -23,8 +16,6 @@ extern unsigned long colloid_delta_p;
 extern unsigned long colloid_dynlimit;
 
 #define CORE_MON 63
-#define LOCAL_NUMA 1
-#define WORKER_BUDGET 1000000
 #define LOG_SIZE 10000
 #define MIN_LOCAL_LAT 15
 #define MIN_REMOTE_LAT 30
@@ -302,6 +293,8 @@ static int colloidmon_init(void)
 
     WRITE_ONCE(colloid_nid_of_interest, LOCAL_NUMA);
 
+    nucleus_measurement_init();
+
     int i;
     for(i = 0; i < 5; i++) {
         msleep(1000);
@@ -317,6 +310,8 @@ static void colloidmon_exit(void)
     msleep(5000);
     flush_workqueue(poll_cha_queue);
     destroy_workqueue(poll_cha_queue);
+
+    nucleus_measurement_exit();
 
     // dump_log();
 

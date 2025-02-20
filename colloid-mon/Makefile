@@ -1,9 +1,11 @@
-obj-m   := colloid-mon.o
+obj-m   := nucleus-mon.o
 KDIR    := /lib/modules/$(shell uname -r)/build
-PWD := $(shell pwd) 
+PWD := $(shell pwd)
+
+nucleus-mon-objs := colloid-mon.o translation-latency.o
   
 all: 
 		$(MAKE) -C $(KDIR) M=${PWD} SUBDIRS=$(PWD) modules
 
 clean:
-		rm -f *.ko *.o *.mod *.mod.c modules.order Module.symvers test
+		$(MAKE) -C $(KDIR) M=${PWD} SUBDIRS=$(PWD) clean
