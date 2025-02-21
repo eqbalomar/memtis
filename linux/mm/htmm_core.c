@@ -26,6 +26,9 @@
 #include "internal.h"
 #include <asm/pgtable.h>
 
+unsigned long nucleus_all_loads = 0;
+EXPORT_SYMBOL(nucleus_all_loads);
+
 void htmm_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
@@ -1339,7 +1342,7 @@ static bool need_memcg_cooling (struct mem_cgroup *memcg)
     return false;
 }
 
-void update_pginfo(pid_t pid, unsigned long address, enum events e)
+void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned long sample_period)
 {
     struct pid *pid_struct = find_get_pid(pid);
     struct task_struct *p = pid_struct ? pid_task(pid_struct, PIDTYPE_PID) : NULL;
@@ -1371,7 +1374,11 @@ void update_pginfo(pid_t pid, unsigned long address, enum events e)
     memcg = get_mem_cgroup_from_mm(mm);
     if (!memcg || !memcg->htmm_enabled)
 	goto mmap_unlock;
-    
+
+	if (event == DRAMREAD || event == CXLREAD || event == NVMREAD) {
+		WRITE_ONCE(nucleus_all_loads, READ_ONCE(nucleus_all_loads) + get_sample_period(sample_period));
+	}
+
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
     /* increase sample counts only for valid records */

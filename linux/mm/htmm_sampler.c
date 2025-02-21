@@ -302,7 +302,7 @@ static int ksamplingd(void *data)
 				break;
 			    }
 
-			    update_pginfo(he->pid, he->addr, event);
+			    update_pginfo(he->pid, he->addr, event, sample_period);
 			    //count_vm_event(HTMM_NR_SAMPLED);
 			    nr_sampled++;
 
