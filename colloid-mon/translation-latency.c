@@ -1,6 +1,7 @@
 #include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/perf_event.h>
+#include <linux/htmm.h>
 #include "nucleus_measurement.h"
 
 #define CORE_MON_PERF 61
@@ -21,10 +22,12 @@ static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
 
 u64 walk_completed;
+u64 smoothed_walk_completed;
 
 u64 prev_loads;
 u64 curr_loads;
 u64 all_loads;
+u64 smoothed_all_loads;
 
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
@@ -115,9 +118,12 @@ void thread_fun_poll_perf(struct work_struct *work) {
             continue;
         }
         prev_tsc = curr_tsc;
+
         curr_loads = READ_ONCE(nucleus_all_loads);
         all_loads = curr_loads - prev_loads;
+        WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP) - 1)*smoothed_all_loads)>>EWMA_EXP);
         prev_loads = curr_loads;
+
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
             for (core = 0; core < app_num_cores; core++) {
@@ -131,6 +137,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
             // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
             if (event == WALK_COMPLETED_EVENT) {
                 WRITE_ONCE(walk_completed, event_val_total[event]);
+                WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP) - 1)*smoothed_walk_completed)>>EWMA_EXP);
             }
         }
 
