@@ -73,15 +73,6 @@ struct log_entry {
 struct log_entry log_buffer[LOG_SIZE];
 int log_idx;
 
-static inline __attribute__((always_inline)) unsigned long rdtscp(void)
-{
-   unsigned long a, d, c;
-
-   __asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
-
-   return (a | (d << 32));
-}
-
 static void poll_cha_init(void) {
     int cha, ret;
     u32 msr_num;

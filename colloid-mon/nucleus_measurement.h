@@ -2,7 +2,7 @@
 #define NUCLEUS_MEASUREMENT_H
 
 // #define SPINPOLL // TODO: configure this
-#define SAMPLE_INTERVAL_MS 1000 // Only used if SPINPOLL is not set
+#define SAMPLE_INTERVAL_MS 10 // Only used if SPINPOLL is not set
 #ifdef SPINPOLL
 #define EWMA_EXP 5
 #else
@@ -22,6 +22,15 @@ enum nucleus_events {
     DTLB_LOADS_EVENT = 2,
     N_NUCLEUS_EVENTS
 };
+
+static inline __attribute__((always_inline)) unsigned long rdtscp(void)
+{
+   unsigned long a, d, c;
+
+   __asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
+
+   return (a | (d << 32));
+}
 
 extern int terminate_mon;
 int nucleus_measurement_init(void);

@@ -7,11 +7,7 @@
 
 void thread_fun_poll_perf(struct work_struct *);
 struct workqueue_struct *poll_perf_queue;
-#ifdef SPINPOLL
 struct work_struct poll_perf;
-#else
-DECLARE_DELAYED_WORK(poll_perf, thread_fun_poll_perf);
-#endif
 
 extern int app_num_cores;
 
@@ -20,6 +16,9 @@ static u64 *event_val_prev[N_NUCLEUS_EVENTS];
 static u64 *event_val_diff[N_NUCLEUS_EVENTS];
 
 static u64 event_val_total[N_NUCLEUS_EVENTS];
+
+static u64 prev_tsc = 0;
+static u64 curr_tsc = 0;
 
 u64 walk_completed_bp;
 u64 walk_completed_hp;
@@ -108,13 +107,15 @@ static u64 sample_perf_event_counter(struct perf_event *event) {
 void thread_fun_poll_perf(struct work_struct *work) {
     // pr_info("nucleus thread_fun_poll_perf");
     int event, core;
-#ifdef SPINPOLL
     u32 budget = WORKER_BUDGET;
-#else
-    u32 budget = 1;
-#endif
     
     while (budget) {
+        curr_tsc = rdtscp();
+        if (curr_tsc < prev_tsc + SAMPLE_INTERVAL_MS * cpu_khz) {
+            budget--;
+            continue;
+        }
+        prev_tsc = curr_tsc;
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
             for (core = 0; core < app_num_cores; core++) {
@@ -139,14 +140,9 @@ void thread_fun_poll_perf(struct work_struct *work) {
 
         budget--;
     }
-    if(!READ_ONCE(terminate_mon)){
-#ifdef SPINPOLL
+    if (!READ_ONCE(terminate_mon)) {
         queue_work_on(CORE_MON_PERF, poll_perf_queue, &poll_perf);
-#else
-        queue_delayed_work_on(CORE_MON_PERF, poll_perf_queue, &poll_perf, msecs_to_jiffies(SAMPLE_INTERVAL_MS));
-#endif
-    }
-    else{
+    } else {
         return;
     }
 }
@@ -173,19 +169,11 @@ int nucleus_measurement_init(void)
         event_val_total[event] = 0;
     }
 
-#ifdef SPINPOLL
     INIT_WORK(&poll_perf, thread_fun_poll_perf);
-#else
-    INIT_DELAYED_WORK(&poll_perf, thread_fun_poll_perf);
-#endif
 
     perf_init();
 
-#ifdef SPINPOLL
     queue_work_on(CORE_MON_PERF, poll_perf_queue, &poll_perf);
-#else
-    queue_delayed_work_on(CORE_MON_PERF, poll_perf_queue, &poll_perf, msecs_to_jiffies(SAMPLE_INTERVAL_MS));
-#endif
 
     return 0;
 }
