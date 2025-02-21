@@ -29,6 +29,14 @@ u64 curr_loads;
 u64 all_loads;
 u64 smoothed_all_loads;
 
+unsigned long smoothed_t_lat_hp;
+// EXPORT_SYMBOL(smoothed_t_lat_hp);
+
+unsigned long smoothed_t_lat_bp;
+// EXPORT_SYMBOL(smoothed_t_lat_bp);
+
+extern unsigned long smoothed_lat_local;
+
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
 static unsigned long get_perf_event_config(enum nucleus_events e) {
@@ -110,6 +118,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
     // pr_info("nucleus thread_fun_poll_perf");
     int event, core;
     u32 budget = WORKER_BUDGET;
+    u64 t_lat_bp, t_lat_hp;
     
     while (budget) {
         curr_tsc = rdtscp();
@@ -137,9 +146,22 @@ void thread_fun_poll_perf(struct work_struct *work) {
             // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
             if (event == WALK_COMPLETED_EVENT) {
                 WRITE_ONCE(walk_completed, event_val_total[event]);
-                WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP) - 1)*smoothed_walk_completed)>>EWMA_EXP);
             }
         }
+
+        WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP) - 1)*smoothed_walk_completed)>>EWMA_EXP);
+
+        t_lat_hp = 3 * smoothed_lat_local;
+        if (smoothed_all_loads > 0 && smoothed_walk_completed < smoothed_all_loads) {
+            t_lat_hp = (smoothed_walk_completed * 3 * smoothed_lat_local) / smoothed_all_loads;
+        }
+        WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
+
+        t_lat_bp = 4 * smoothed_lat_local;
+        if (smoothed_all_loads > 0 && smoothed_walk_completed < smoothed_all_loads) {
+            t_lat_bp = (smoothed_walk_completed * 4 * smoothed_lat_local) / smoothed_all_loads;
+        }
+        WRITE_ONCE(smoothed_t_lat_bp, t_lat_bp);
 
         budget--;
     }
