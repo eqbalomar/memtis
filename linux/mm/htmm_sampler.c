@@ -18,6 +18,9 @@ struct task_struct *access_sampling = NULL;
 struct perf_event ***mem_event = NULL;
 int *cpus_in_socket = NULL;
 
+unsigned long nucleus_all_loads = 0;
+EXPORT_SYMBOL(nucleus_all_loads);
+
 static bool valid_va(unsigned long addr)
 {
     if (!(addr >> (PGDIR_SHIFT + 9)) && addr != 0)
@@ -224,6 +227,8 @@ static int ksamplingd(void *data)
 
     /* for analytic purpose */
     unsigned long hr_dram = 0, hr_nvm = 0;
+
+	WRITE_ONCE(nucleus_all_loads, 0);
 
     /* orig impl: see read_sum_exec_runtime() */
     trace_runtime = total_runtime = exec_runtime = t->se.sum_exec_runtime;

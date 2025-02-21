@@ -26,8 +26,6 @@ u64 prev_loads;
 u64 curr_loads;
 u64 all_loads;
 
-extern unsigned long nucleus_all_loads;
-
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
 static unsigned long get_perf_event_config(enum nucleus_events e) {
