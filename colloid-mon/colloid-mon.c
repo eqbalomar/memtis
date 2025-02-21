@@ -158,32 +158,33 @@ void thread_fun_poll_cha(struct work_struct *work) {
         sample_cha_ctr(1, 0);
         sample_cha_ctr(1, 1);
 
-        cum_occ = cur_ctr_val[0][0] - prev_ctr_val[0][0];
-        delta_tsc = cur_ctr_tsc[0][0] - prev_ctr_tsc[0][0];
-        cur_occ = (cum_occ * OCC_PRECISION)/delta_tsc;
-        cur_inserts = (cur_ctr_val[0][1] - prev_ctr_val[0][1]);
+        cur_occ = cur_ctr_val[0][0] - prev_ctr_val[0][0];
+        cur_inserts = cur_ctr_val[0][1] - prev_ctr_val[0][1];
         WRITE_ONCE(smoothed_occ_local, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_local)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_local, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_local)>>EWMA_EXP);
-        cur_lat_local = (smoothed_inserts_local > 0)?(smoothed_occ_local/smoothed_inserts_local):(MIN_LOCAL_LAT);
-        cur_lat_local = (cur_lat_local > MIN_LOCAL_LAT)?(cur_lat_local):(MIN_LOCAL_LAT);
+        cur_lat_local = MIN_LOCAL_LAT * LATENCY_PRECISION;
+        if (smoothed_inserts_local > 0) {
+            cur_lat_local = (smoothed_occ_local * LATENCY_PRECISION) / smoothed_inserts_local;
+            cur_lat_local = (cur_lat_local * N_SEC) / CHA_FREQ;
+        }
         WRITE_ONCE(smoothed_lat_local, cur_lat_local);
-        // WRITE_ONCE(smoothed_lat_local, (cur_lat_local*1000 + 31*smoothed_lat_local)/32);
         // log_buffer[log_idx].tsc = cur_ctr_tsc[0][0];
         // log_buffer[log_idx].occ_local = cur_occ;
         // log_buffer[log_idx].inserts_local = cur_inserts;
 
-        cum_occ = cur_ctr_val[1][0] - prev_ctr_val[1][0];
-        delta_tsc = cur_ctr_tsc[1][0] - prev_ctr_tsc[1][0];
-        cur_occ = (cum_occ * OCC_PRECISION)/delta_tsc;
-        cur_inserts = (cur_ctr_val[1][1] - prev_ctr_val[1][1]);
+        cur_occ = cur_ctr_val[1][0] - prev_ctr_val[1][0];
+        cur_inserts = cur_ctr_val[1][1] - prev_ctr_val[1][1];
         WRITE_ONCE(smoothed_occ_remote, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_remote)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_remote)>>EWMA_EXP);
-        cur_lat_remote = (smoothed_inserts_remote > 0)?(smoothed_occ_remote/smoothed_inserts_remote):(MIN_REMOTE_LAT);
-        WRITE_ONCE(smoothed_lat_remote, (cur_lat_remote > MIN_REMOTE_LAT)?(cur_lat_remote):(MIN_REMOTE_LAT));
+        cur_lat_remote = MIN_REMOTE_LAT * LATENCY_PRECISION;
+        if (smoothed_inserts_remote > 0) {
+            cur_lat_remote = (smoothed_occ_remote * LATENCY_PRECISION) / smoothed_inserts_remote;
+            cur_lat_remote = (cur_lat_remote * N_SEC) / CHA_FREQ;
+        }
+        WRITE_ONCE(smoothed_lat_remote, cur_lat_remote);
         // log_buffer[log_idx].occ_remote = cur_occ;
         // log_buffer[log_idx].inserts_remote = cur_inserts;
         
-        // WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_occ_local > smoothed_occ_remote));
 
         // TODO: Handle the case when rates of either tier can be zero
         WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_occ_local*smoothed_inserts_remote > smoothed_occ_remote*smoothed_inserts_local));
