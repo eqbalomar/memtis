@@ -20,20 +20,20 @@ static u64 event_val_total[N_NUCLEUS_EVENTS];
 static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
 
-u64 walk_completed_bp;
-u64 walk_completed_hp;
-u64 dtlb_loads;
+u64 walk_completed;
+
+u64 prev_loads;
+u64 curr_loads;
+u64 all_loads;
+
+extern unsigned long nucleus_all_loads;
 
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
 static unsigned long get_perf_event_config(enum nucleus_events e) {
     switch (e) {
-        case WALK_COMPLETED_BP_EVENT:
-            return WALK_COMPLETED_BP;
-        case WALK_COMPLETED_HP_EVENT:
-            return WALK_COMPLETED_HP;
-        case DTLB_LOADS_EVENT:
-            return DTLB_LOADS;
+        case WALK_COMPLETED_EVENT:
+            return WALK_COMPLETED;
         default:
             return N_NUCLEUS_EVENTS;
     }
@@ -99,6 +99,7 @@ static u64 sample_perf_event_counter(struct perf_event *event) {
         return -1;
     }
     event_val = perf_event_read_value(event, enabled, running);
+    // pr_info("nucleus_mon: event_val %llu enabled %llu running %llu", event_val, *enabled, *running);
     kfree(enabled);
     kfree(running);
     return event_val;
@@ -116,6 +117,9 @@ void thread_fun_poll_perf(struct work_struct *work) {
             continue;
         }
         prev_tsc = curr_tsc;
+        curr_loads = READ_ONCE(nucleus_all_loads);
+        all_loads = curr_loads - prev_loads;
+        prev_loads = curr_loads;
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
             for (core = 0; core < app_num_cores; core++) {
@@ -127,14 +131,8 @@ void thread_fun_poll_perf(struct work_struct *work) {
                 event_val_prev[event][core] = event_val_curr[event][core];
             }
             // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
-            if (event == WALK_COMPLETED_BP_EVENT) {
-                WRITE_ONCE(walk_completed_bp, event_val_total[event]);
-            }
-            else if (event == WALK_COMPLETED_HP_EVENT) {
-                WRITE_ONCE(walk_completed_hp, event_val_total[event]);
-            }
-            else if (event == DTLB_LOADS_EVENT) {
-                WRITE_ONCE(dtlb_loads, event_val_total[event]);
+            if (event == WALK_COMPLETED_EVENT) {
+                WRITE_ONCE(walk_completed, event_val_total[event]);
             }
         }
 
