@@ -49,11 +49,8 @@ u64 smoothed_occ_local, smoothed_inserts_local;
 u64 smoothed_occ_remote, smoothed_inserts_remote;
 u64 p_lo, p_hi;
 
-unsigned long smoothed_lat_local;
-// EXPORT_SYMBOL(smoothed_lat_local);
-
-unsigned long smoothed_lat_remote;
-// EXPORT_SYMBOL(smoothed_lat_remote);
+extern unsigned long smoothed_lat_local;
+extern unsigned long smoothed_lat_remote;
 
 void thread_fun_poll_cha(struct work_struct *);
 struct workqueue_struct *poll_cha_queue;

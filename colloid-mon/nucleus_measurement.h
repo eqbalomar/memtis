@@ -37,7 +37,6 @@ static inline __attribute__((always_inline)) unsigned long rdtscp(void)
    return (a | (d << 32));
 }
 
-extern int terminate_mon;
 int nucleus_measurement_init(void);
 void nucleus_measurement_exit(void);
 

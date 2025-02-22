@@ -26,6 +26,9 @@
 #include "internal.h"
 #include <asm/pgtable.h>
 
+unsigned long nucleus_all_loads = 0;
+EXPORT_SYMBOL(nucleus_all_loads);
+
 void htmm_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);

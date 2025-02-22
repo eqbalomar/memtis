@@ -12,6 +12,18 @@
 unsigned long nucleus_def_tier_size = 0;
 EXPORT_SYMBOL(nucleus_def_tier_size);
 
+unsigned long smoothed_lat_local;
+EXPORT_SYMBOL(smoothed_lat_local);
+
+unsigned long smoothed_lat_remote;
+EXPORT_SYMBOL(smoothed_lat_remote);
+
+unsigned long smoothed_t_lat_hp;
+EXPORT_SYMBOL(smoothed_t_lat_hp);
+
+unsigned long smoothed_t_lat_bp;
+EXPORT_SYMBOL(smoothed_t_lat_bp);
+
 struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue = {
 	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_hugepages_deferred_queue.request_queue_lock),
 	.request_queue = LIST_HEAD_INIT(nucleus_hugepages_deferred_queue.request_queue),

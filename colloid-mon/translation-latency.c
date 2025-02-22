@@ -29,13 +29,12 @@ u64 curr_loads;
 u64 all_loads;
 u64 smoothed_all_loads;
 
-unsigned long smoothed_t_lat_hp;
-// EXPORT_SYMBOL(smoothed_t_lat_hp);
-
-unsigned long smoothed_t_lat_bp;
-// EXPORT_SYMBOL(smoothed_t_lat_bp);
-
+extern int terminate_mon;
+extern unsigned long nucleus_all_loads;
 extern unsigned long smoothed_lat_local;
+
+extern unsigned long smoothed_t_lat_hp;
+extern unsigned long smoothed_t_lat_bp;
 
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
@@ -129,7 +128,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
         prev_tsc = curr_tsc;
 
         curr_loads = READ_ONCE(nucleus_all_loads);
-        all_loads = curr_loads - prev_loads;
+        WRITE_ONCE(all_loads, curr_loads - prev_loads);
         WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
         prev_loads = curr_loads;
 

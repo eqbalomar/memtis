@@ -94,8 +94,6 @@ enum events {
     N_HTMMEVENTS
 };
 
-extern unsigned long nucleus_all_loads;
-
 /* htmm_core.c */
 extern void htmm_mm_init(struct mm_struct *mm);
 extern void htmm_mm_exit(struct mm_struct *mm);
