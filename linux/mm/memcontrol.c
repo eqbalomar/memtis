@@ -5269,7 +5269,7 @@ static struct mem_cgroup *mem_cgroup_alloc(void)
 	memcg->split_happen = false;
 	memcg->need_split = false;
 	memcg->last_split_ts = jiffies;
-	memcg->cooling_clock = 0;
+	WRITE_ONCE(memcg->cooling_clock, 0);
 	memcg->nr_alloc = 0;
 #endif
 	idr_replace(&mem_cgroup_idr, memcg, memcg->id.id);

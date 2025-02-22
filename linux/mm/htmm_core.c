@@ -1217,7 +1217,7 @@ static bool __cooling(struct mm_struct *mm,
 	struct mem_cgroup_per_node *pn = memcg->nodeinfo[nid];
 	if (pn && READ_ONCE(pn->need_cooling)) {
 	    spin_lock(&memcg->access_lock);
-	    memcg->cooling_clock++;
+	    WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
 	    spin_unlock(&memcg->access_lock);
 	    return false;
 	}
@@ -1226,7 +1226,7 @@ static bool __cooling(struct mm_struct *mm,
     spin_lock(&memcg->access_lock);
 
     reset_memcg_stat(memcg); 
-    memcg->cooling_clock++;
+    WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
     memcg->bp_active_threshold--;
     memcg->cooled = true;
     smp_mb();

@@ -168,7 +168,7 @@ static void perform_cooling(struct mem_cgroup *memcg, struct nucleus_hugepage *h
 		}
     }
 
-	hp->cooling_clock = memcg_cclock;
+	WRITE_ONCE(hp->cooling_clock, memcg_cclock);
 }
 
 void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, struct mm_struct *mm, unsigned long address)
