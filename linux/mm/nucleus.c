@@ -73,9 +73,9 @@ void nucleus_mm_exit(struct mm_struct *mm)
 
 	// pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 	if (!hash_empty(mm->nucleus_hugepages_hash)) {
-		pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
+		// pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 		hash_for_each_safe(mm->nucleus_hugepages_hash, bkt, tmp, hp, hash) {
-			pr_info("nucleus: hash_del hp %lx\n", hp->address);
+			// pr_info("nucleus: hash_del hp %lx\n", hp->address);
 			hash_del(&hp->hash);
 			atomic_dec(&hp->ref_count);
 		}
@@ -115,7 +115,7 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 			pr_err("nucleus: failed to allocate memory for hp\n");
 			return NULL;
 		}
-		pr_info("nucleus: created hp %lx\n", hp_vaddr);
+		// pr_info("nucleus: created hp %lx\n", hp_vaddr);
 		INIT_LIST_HEAD(&hp->list);
 		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 		if (!hp->bp_list) {
@@ -157,7 +157,7 @@ static void perform_cooling(struct mem_cgroup *memcg, struct nucleus_hugepage *h
 
     if (memcg_cclock > hp->cooling_clock) {
 	    diff = memcg_cclock - hp->cooling_clock;
-		pr_info("nucleus: perform cooling for hp %lx, diff %d\n", hp->address, diff);
+		// pr_info("nucleus: perform cooling for hp %lx, diff %d\n", hp->address, diff);
 
 	    /* perform cooling */
 	    for (i = 0; i < HPAGE_PMD_NR; i++) {
