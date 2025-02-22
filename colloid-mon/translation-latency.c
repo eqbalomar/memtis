@@ -130,7 +130,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
 
         curr_loads = READ_ONCE(nucleus_all_loads);
         all_loads = curr_loads - prev_loads;
-        WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP) - 1)*smoothed_all_loads)>>EWMA_EXP);
+        WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
         prev_loads = curr_loads;
 
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
@@ -149,7 +149,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
             }
         }
 
-        WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP) - 1)*smoothed_walk_completed)>>EWMA_EXP);
+        WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed)>>EWMA_EXP_PERF);
 
         t_lat_hp = 3 * smoothed_lat_local;
         if (smoothed_all_loads > 0 && smoothed_walk_completed < smoothed_all_loads) {

@@ -9,6 +9,8 @@
 #define EWMA_EXP 4
 #endif
 
+#define EWMA_EXP_PERF 5
+
 #define LOCAL_NUMA 1
 #define WORKER_BUDGET 1000000
 
