@@ -93,23 +93,12 @@ static void perf_init(void) {
 }
 
 static u64 sample_perf_event_counter(struct perf_event *event) {
-    u64 event_val, *enabled, *running;
+    u64 event_val, enabled = 0, running = 0;
     if (!event) {
         return -1;
     }
-    enabled = kzalloc(sizeof(u64), GFP_KERNEL);
-    running = kzalloc(sizeof(u64), GFP_KERNEL);
-    if (!enabled || !running) {
-        pr_err("nucleus_mon: failed to allocate memory for enabled or running variables\n");
-        kfree(enabled);
-        kfree(running);
-        perf_event_release_kernel(event);
-        return -1;
-    }
-    event_val = perf_event_read_value(event, enabled, running);
-    // pr_info("nucleus_mon: event_val %llu enabled %llu running %llu", event_val, *enabled, *running);
-    kfree(enabled);
-    kfree(running);
+    event_val = perf_event_read_value(event, &enabled, &running);
+    // pr_info("nucleus_mon: event_val %llu enabled %llu running %llu", event_val, enabled, running);
     return event_val;
 }
 
