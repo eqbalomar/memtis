@@ -51,6 +51,32 @@ struct deferred_nucleus_request_queue {
 	struct list_head request_queue;
 };
 
+struct nucleus_split_request {
+	struct nucleus_hugepage *hp;
+	struct list_head list;
+};
+
+struct nucleus_merge_request {
+	struct nucleus_hugepage *hp;
+	int target_node;
+	struct list_head list;
+};
+
+enum migrate_request_type {
+    NUCLEUS_HUGEPAGE = 0,
+	NUCLEUS_BASEPAGE = 1
+};
+
+struct nucleus_migrate_request {
+	enum migrate_request_type type;
+	union {
+		struct nucleus_hugepage *hp;
+		struct nucleus_basepage *bp;
+	};
+	int target_node;
+	struct list_head list;
+};
+
 // void init_deferred_nucleus_request_queue(void);
 void nucleus_init_def_tier_size(void);
 void nucleus_mm_init(struct mm_struct *mm);
