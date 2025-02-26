@@ -129,7 +129,7 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 			INIT_LIST_HEAD(&bp->list);
 		}
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
-		atomic_inc(&hp->ref_count);
+		atomic_set(&hp->ref_count, 1);
 
 		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
 		if (!req) {
