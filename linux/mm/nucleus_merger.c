@@ -14,7 +14,8 @@ EXPORT_SYMBOL(nucleus_merge_queue);
 
 static struct task_struct *knucleusmergerd = NULL;
 
-static int nucleus_merger(void *data) {
+static int nucleus_merger(void *data)
+{
 	unsigned long flags, hp_addr;
     struct nucleus_merge_request *req, *req_tmp;
     struct nucleus_hugepage *hp;

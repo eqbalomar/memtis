@@ -7602,9 +7602,11 @@ static ssize_t memcg_htmm_write(struct kernfs_open_file *of,
     if (memcg->htmm_enabled) {
 	kmigraterd_init();
 	nucleus_merger_init();
+	nucleus_split_migrater_init();
     } else {
 	kmigraterd_stop();
 	nucleus_merger_exit();
+	nucleus_split_migrater_exit();
     }
     for_each_node_state(nid, N_MEMORY) {
 	struct pglist_data *pgdat = NODE_DATA(nid);

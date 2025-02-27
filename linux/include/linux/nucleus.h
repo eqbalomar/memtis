@@ -89,4 +89,8 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 int nucleus_merger_init(void);
 void nucleus_merger_exit(void);
 
+/* nucleus_split_migrater.c */
+int nucleus_split_migrater_init(void);
+void nucleus_split_migrater_exit(void);
+
 #endif /* _LINUX_NUCLEUS_H */

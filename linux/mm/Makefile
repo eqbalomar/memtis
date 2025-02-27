@@ -131,4 +131,4 @@ obj-$(CONFIG_IO_MAPPING) += io-mapping.o
 obj-$(CONFIG_HAVE_BOOTMEM_INFO_NODE) += bootmem_info.o
 obj-$(CONFIG_GENERIC_IOREMAP) += ioremap.o
 obj-$(CONFIG_HTMM) += htmm_sampler.o htmm_core.o htmm_migrater.o
-obj-$(CONFIG_NUCLEUS) += nucleus.o nucleus_merger.o
+obj-$(CONFIG_NUCLEUS) += nucleus.o nucleus_merger.o nucleus_split_migrater.o
