@@ -69,6 +69,7 @@
 
 #include <linux/mempolicy.h>
 #include <linux/htmm.h>
+#include <linux/nucleus.h>
 #include <linux/uaccess.h>
 
 #include <trace/events/vmscan.h>
@@ -7600,8 +7601,10 @@ static ssize_t memcg_htmm_write(struct kernfs_open_file *of,
 
     if (memcg->htmm_enabled) {
 	kmigraterd_init();
+	nucleus_merger_init();
     } else {
 	kmigraterd_stop();
+	nucleus_merger_exit();
     }
     for_each_node_state(nid, N_MEMORY) {
 	struct pglist_data *pgdat = NODE_DATA(nid);

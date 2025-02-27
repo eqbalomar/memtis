@@ -41,7 +41,7 @@ struct nucleus_basepage {
 	bool place_in_def;
 };
 
-struct deferred_nucleus_request {
+struct nucleus_add_request {
 	struct nucleus_hugepage *hp;
 	struct list_head list;
 };
@@ -77,11 +77,16 @@ struct nucleus_migrate_request {
 	struct list_head list;
 };
 
-// void init_deferred_nucleus_request_queue(void);
+/* nucleus.c */
+
+// void init_nucleus_add_queue(void);
 void nucleus_init_def_tier_size(void);
 void nucleus_mm_init(struct mm_struct *mm);
 void nucleus_mm_exit(struct mm_struct *mm);
 void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, struct mm_struct *mm, unsigned long address);
 
+/* nucleus_merger.c */
+int nucleus_merger_init(void);
+void nucleus_merger_exit(void);
 
 #endif /* _LINUX_NUCLEUS_H */

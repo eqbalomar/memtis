@@ -2,9 +2,6 @@
 #include <linux/hashtable.h>
 #include <linux/memcontrol.h>
 #include <linux/mempolicy.h>
-#include <linux/mmzone.h>
-#include <linux/mm_inline.h>
-#include <linux/rmap.h>
 #include <linux/htmm.h>
 
 #include <linux/nucleus.h>
@@ -24,15 +21,15 @@ EXPORT_SYMBOL(smoothed_t_lat_hp);
 unsigned long smoothed_t_lat_bp;
 EXPORT_SYMBOL(smoothed_t_lat_bp);
 
-struct deferred_nucleus_request_queue nucleus_hugepages_deferred_queue = {
-	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_hugepages_deferred_queue.request_queue_lock),
-	.request_queue = LIST_HEAD_INIT(nucleus_hugepages_deferred_queue.request_queue),
+struct deferred_nucleus_request_queue nucleus_add_queue = {
+	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_add_queue.request_queue_lock),
+	.request_queue = LIST_HEAD_INIT(nucleus_add_queue.request_queue),
 };
-EXPORT_SYMBOL(nucleus_hugepages_deferred_queue);
+EXPORT_SYMBOL(nucleus_add_queue);
 
-// void init_deferred_nucleus_request_queue() {
-// 	spin_lock_init(&nucleus_hugepages_deferred_queue.request_queue_lock);
-// 	INIT_LIST_HEAD(&nucleus_hugepages_deferred_queue.request_queue);
+// void init_nucleus_add_queue() {
+// 	spin_lock_init(&nucleus_add_queue.request_queue_lock);
+// 	INIT_LIST_HEAD(&nucleus_add_queue.request_queue);
 // }
 
 void nucleus_init_def_tier_size()
@@ -108,7 +105,7 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 	unsigned long flags;
 	struct nucleus_hugepage *hp = get_nucleus_hugepage(mm, hp_vaddr);
 	struct nucleus_basepage *bp;
-	struct deferred_nucleus_request *req;
+	struct nucleus_add_request *req;
 	if (!hp) {
 		hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
 		if (!hp) {
@@ -131,15 +128,15 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
 		atomic_set(&hp->ref_count, 1);
 
-		req = kzalloc(sizeof(struct deferred_nucleus_request), GFP_KERNEL);
+		req = kzalloc(sizeof(struct nucleus_add_request), GFP_KERNEL);
 		if (!req) {
 			pr_err("nucleus: failed to allocate memory for req\n");
 			return NULL;
 		}
 		req->hp = hp;
-		spin_lock_irqsave(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
-		list_add_tail(&req->list, &nucleus_hugepages_deferred_queue.request_queue);
-		spin_unlock_irqrestore(&nucleus_hugepages_deferred_queue.request_queue_lock, flags);
+		spin_lock_irqsave(&nucleus_add_queue.request_queue_lock, flags);
+		list_add_tail(&req->list, &nucleus_add_queue.request_queue);
+		spin_unlock_irqrestore(&nucleus_add_queue.request_queue_lock, flags);
 	}
 	return hp;
 }

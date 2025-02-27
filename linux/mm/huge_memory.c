@@ -208,11 +208,13 @@ static ssize_t enabled_store(struct kobject *kobj,
 	} else
 		ret = -EINVAL;
 
+#ifndef CONFIG_NUCLEUS
 	if (ret > 0) {
 		int err = start_stop_khugepaged();
 		if (err)
 			ret = err;
 	}
+#endif
 	return ret;
 }
 static struct kobj_attribute enabled_attr =
@@ -443,9 +445,11 @@ static int __init hugepage_init(void)
 		return 0;
 	}
 
+#ifndef CONFIG_NUCLEUS
 	err = start_stop_khugepaged();
 	if (err)
 		goto err_khugepaged;
+#endif
 
 	return 0;
 err_khugepaged:
