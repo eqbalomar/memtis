@@ -149,8 +149,13 @@ skip_isolation:
             list_add(&page->lru, &tmp);
         }
 
+        lock_page(page);
+
         if (!split_huge_page_to_list(page, NULL)) {
             split++;
+            spin_lock_irq(&lruvec->lru_lock);
+            update_lru_size(lruvec, page_lru(page), page_zonenum(page), thp_nr_pages(page));
+            spin_unlock_irq(&lruvec->lru_lock);
         } else {
             check_failed_list(&tmp, &failed_list);
         }
