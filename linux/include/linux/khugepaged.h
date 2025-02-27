@@ -17,6 +17,7 @@ extern void __khugepaged_exit(struct mm_struct *mm);
 extern int khugepaged_enter_vma_merge(struct vm_area_struct *vma,
 				      unsigned long vm_flags);
 extern void khugepaged_min_free_kbytes_update(void);
+extern int collapse_huge_page(struct mm_struct *mm,	unsigned long address, struct page **hpage,	int node, int referenced, int unmapped);
 #ifdef CONFIG_SHMEM
 extern void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr);
 #else

@@ -3,6 +3,7 @@
 #include <linux/mempolicy.h>
 #include <linux/delay.h>
 #include <linux/htmm.h>
+#include <linux/khugepaged.h>
 #include <linux/nucleus.h>
 
 struct deferred_nucleus_request_queue nucleus_merge_queue = {
@@ -14,9 +15,10 @@ EXPORT_SYMBOL(nucleus_merge_queue);
 static struct task_struct *knucleusmergerd = NULL;
 
 static int nucleus_merger(void *data) {
-	unsigned long flags;
+	unsigned long flags, hp_addr;
     struct nucleus_merge_request *req, *req_tmp;
     struct nucleus_hugepage *hp;
+    struct page *hpage;
 	int target_node;
 
     while (!kthread_should_stop()) {
@@ -26,6 +28,12 @@ static int nucleus_merger(void *data) {
 			hp = req->hp;
 			target_node = req->target_node;
 			pr_info("nucleus_merger: merge hp %lx in node %d\n", hp->address, target_node);
+
+            hpage = NULL;
+            hp_addr = hp->address << HPAGE_PMD_SHIFT;
+            mmap_read_lock(hp->mm);
+            collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
+            // collapse_huge_page will release mm lock
 
 			atomic_dec(&hp->ref_count);
 			list_del(&req->list);
