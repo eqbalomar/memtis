@@ -79,7 +79,7 @@ static unsigned int split_hugepages(void)
     struct lruvec *lruvec;
     pmd_t *pmd;
     unsigned long hp_addr;
-    unsigned int split = 0, nr_max = 50; // max: 100MB
+    unsigned int split = 0;
     int i, node_id;
     bool skip_iso;
     for (i = 0; i < NUM_NUMA_NODES; i++) {
@@ -106,9 +106,6 @@ static unsigned int split_hugepages(void)
             goto free_req;
         }
         skip_iso = false;
-
-        if (split >= nr_max)
-            break;
 
         page = pmd_page(*pmd);
         if (!page) {
