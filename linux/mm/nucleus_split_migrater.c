@@ -18,6 +18,7 @@ EXPORT_SYMBOL(nucleus_split_queue);
 
 static struct task_struct *knucleussplitmigraterd = NULL;
 
+#define NUM_NUMA_NODES 2
 
 static pmd_t *mm_find_pmd(struct mm_struct *mm, unsigned long address)
 {
@@ -70,6 +71,8 @@ static unsigned long split_hugepages(void)
 {
     unsigned long flags;
     LIST_HEAD(failed_list);
+    struct list_head split_lists[NUM_NUMA_NODES];
+    struct lruvec *lruvecs[NUM_NUMA_NODES];
     struct nucleus_split_request *req, *req_tmp;
     struct nucleus_hugepage *hp;
     struct page *page;
@@ -77,8 +80,12 @@ static unsigned long split_hugepages(void)
     pmd_t *pmd;
     unsigned long hp_addr;
     unsigned int nr_max = 50; // max: 100MB
-    int split = 0;
+    int i, split = 0, node_id;
     bool skip_iso;
+    for (i = 0; i < NUM_NUMA_NODES; i++) {
+        INIT_LIST_HEAD(&split_lists[i]);
+        lruvecs[i] = NULL;
+    }
 
     spin_lock_irqsave(&nucleus_split_queue.request_queue_lock, flags);
     list_for_each_entry_safe(req, req_tmp, &nucleus_split_queue.request_queue, list) {
@@ -99,7 +106,6 @@ static unsigned long split_hugepages(void)
             goto free_req;
         }
         skip_iso = false;
-        
 
         if (split >= nr_max)
             break;
@@ -114,6 +120,14 @@ static unsigned long split_hugepages(void)
         mmap_read_unlock(hp->mm);
 
         lruvec = mem_cgroup_page_lruvec(page);
+        node_id = page_to_nid(page);
+        if (node_id >= NUM_NUMA_NODES) {
+            pr_info("nucleus_algorithm: hp %lx invalid node id %d\n", hp->address, node_id);
+            goto free_req;
+        }
+        if (lruvecs[node_id] == NULL) {
+            lruvecs[node_id] = lruvec;
+        }
 
         if (!PageLRU(page)) {
             skip_iso = true;
@@ -153,9 +167,7 @@ skip_isolation:
 
         if (!split_huge_page_to_list(page, NULL)) {
             split++;
-            spin_lock_irq(&lruvec->lru_lock);
-            update_lru_size(lruvec, page_lru(page), page_zonenum(page), thp_nr_pages(page));
-            spin_unlock_irq(&lruvec->lru_lock);
+            list_splice(&tmp, &split_lists[node_id]);
         } else {
             check_failed_list(&tmp, &failed_list);
         }
@@ -167,8 +179,15 @@ free_req:
         list_del(&req->list);
         kfree(req);
     }
-    spin_unlock_irqrestore(&nucleus_split_queue.request_queue_lock, flags);
+
     putback_movable_pages(&failed_list);
+
+    for (i = 0; i < NUM_NUMA_NODES; i++) {
+        if (lruvecs[i] && !list_empty(&split_lists[i])) {
+            putback_split_pages(&split_lists[i], lruvecs[i]);
+        }
+    }
+    spin_unlock_irqrestore(&nucleus_split_queue.request_queue_lock, flags);
 
     return split;
 }
