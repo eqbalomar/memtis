@@ -1249,6 +1249,7 @@ normal_exec:
 
 	khugepaged_pages_collapsed++;
 	result = SCAN_SUCCEED;
+	ret = 1;
 out_up_write:
 	mmap_write_unlock(mm);
 out_nolock:

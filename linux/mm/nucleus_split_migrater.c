@@ -67,7 +67,7 @@ static void check_failed_list(struct list_head *tmp, struct list_head *failed_li
     }
 }
 
-static unsigned long split_hugepages(void)
+static unsigned int split_hugepages(void)
 {
     unsigned long flags;
     LIST_HEAD(failed_list);
@@ -79,8 +79,8 @@ static unsigned long split_hugepages(void)
     struct lruvec *lruvec;
     pmd_t *pmd;
     unsigned long hp_addr;
-    unsigned int nr_max = 50; // max: 100MB
-    int i, split = 0, node_id;
+    unsigned int split = 0, nr_max = 50; // max: 100MB
+    int i, node_id;
     bool skip_iso;
     for (i = 0; i < NUM_NUMA_NODES; i++) {
         INIT_LIST_HEAD(&split_lists[i]);
@@ -195,11 +195,11 @@ free_req:
 
 static int nucleus_split_migrater(void *data)
 {
-    unsigned long split = 0;
+    unsigned int split = 0;
     while (!kthread_should_stop()) {
 		pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
-        pr_info("nucleus_split_migrater: processed split requests, split %lu pages\n", split);
+        pr_info("nucleus_split_migrater: processed split requests, split %u pages\n", split);
 
         msleep_interruptible(5000);
     }

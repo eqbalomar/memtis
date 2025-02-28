@@ -21,9 +21,11 @@ static int nucleus_merger(void *data)
     struct nucleus_hugepage *hp;
     struct page *hpage;
 	int target_node;
+    unsigned int merged = 0;
 
     while (!kthread_should_stop()) {
 		pr_info("nucleus_merger: processing merge requests\n");
+        merged = 0;
 		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
 		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queue.request_queue, list) {
 			hp = req->hp;
@@ -33,7 +35,7 @@ static int nucleus_merger(void *data)
             hpage = NULL;
             hp_addr = hp->address << HPAGE_PMD_SHIFT;
             mmap_read_lock(hp->mm);
-            collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
+            merged += collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
             // collapse_huge_page will release mm lock
 
 			atomic_dec(&hp->ref_count);
@@ -41,7 +43,7 @@ static int nucleus_merger(void *data)
 			kfree(req);
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
-		pr_info("nucleus_merger: processed merge requests\n");
+		pr_info("nucleus_merger: processed merge requests, merged %u pages\n", merged);
 
         msleep_interruptible(5000);
     }
