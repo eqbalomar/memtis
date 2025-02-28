@@ -2831,6 +2831,7 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 				filemap_nr_thps_dec(mapping);
 			}
 		}
+#ifndef CONFIG_NUCLEUS
 #ifdef CONFIG_HTMM
 		{
 		    struct mem_cgroup *memcg = page_memcg(head);
@@ -2846,6 +2847,7 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 
 		    spin_unlock(&memcg->access_lock);
 		}
+#endif
 #endif
 		__split_huge_page(page, list, end);
 		ret = 0;

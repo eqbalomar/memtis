@@ -267,9 +267,11 @@ static bool remove_migration_pte(struct page *page, struct vm_area_struct *vma,
 			continue;
 		}
 #endif
+#ifndef CONFIG_NUCLEUS
 #ifdef CONFIG_HTMM
 		if (rmap_walk_arg->unmap_clean && try_to_unmap_clean(&pvmw, new))
 		    continue;
+#endif
 #endif
 		get_page(new);
 		pte = pte_mkold(mk_pte(new, READ_ONCE(vma->vm_page_prot)));
@@ -320,6 +322,7 @@ static bool remove_migration_pte(struct page *page, struct vm_area_struct *vma,
 			else
 				page_add_file_rmap(new, false);
 		}
+#ifndef CONFIG_NUCLEUS
 #ifdef CONFIG_HTMM /* remove_migration_pte() */
 		{
 
@@ -341,6 +344,7 @@ static bool remove_migration_pte(struct page *page, struct vm_area_struct *vma,
 			check_base_cooling(pginfo, new, true);
 		}
 out_cooling_check:
+#endif
 #endif
 		if (vma->vm_flags & VM_LOCKED && !PageTransCompound(new))
 			mlock_vma_page(new);

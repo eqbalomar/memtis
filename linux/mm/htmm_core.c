@@ -4,7 +4,6 @@
  */
 #include <linux/mm.h>
 #include <linux/kernel.h>
-#include <linux/vmalloc.h>
 #include <linux/huge_mm.h>
 #include <linux/mm_inline.h>
 #include <linux/pid.h>
@@ -523,8 +522,10 @@ void putback_split_pages(struct list_head *split_list, struct lruvec *lruvec)
     list_splice(&l_inactive, &l_active);
     spin_unlock_irq(&lruvec->lru_lock);
 
+#ifndef CONFIG_NUCLEUS
     mem_cgroup_uncharge_list(&l_active);
     free_unref_page_list(&l_active);
+#endif
 }
 
 struct page *get_meta_page(struct page *page)
