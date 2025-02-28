@@ -28,7 +28,7 @@ static int nucleus_merger(void *data)
 		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queue.request_queue, list) {
 			hp = req->hp;
 			target_node = req->target_node;
-			pr_info("nucleus_merger: merge hp %lx in node %d\n", hp->address, target_node);
+			// pr_info("nucleus_merger: merge hp %lx in node %d\n", hp->address, target_node);
 
             hpage = NULL;
             hp_addr = hp->address << HPAGE_PMD_SHIFT;
@@ -41,6 +41,7 @@ static int nucleus_merger(void *data)
 			kfree(req);
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
+		pr_info("nucleus_merger: processed merge requests\n");
 
         msleep_interruptible(5000);
     }

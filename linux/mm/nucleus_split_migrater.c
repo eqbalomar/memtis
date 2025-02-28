@@ -91,7 +91,7 @@ static unsigned long split_hugepages(void)
     list_for_each_entry_safe(req, req_tmp, &nucleus_split_queue.request_queue, list) {
         LIST_HEAD(tmp);
         hp = req->hp;
-        pr_info("nucleus_split_migrater: split hp %lx\n", hp->address);
+        // pr_info("nucleus_split_migrater: split hp %lx\n", hp->address);
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
         mmap_read_lock(hp->mm);
         pmd = mm_find_pmd(hp->mm, hp_addr);
@@ -165,7 +165,7 @@ skip_isolation:
 
         lock_page(page);
 
-        if (!split_huge_page_to_list(page, NULL)) {
+        if (!split_huge_page_to_list(page, &tmp)) {
             split++;
             list_splice(&tmp, &split_lists[node_id]);
         } else {
@@ -184,6 +184,7 @@ free_req:
 
     for (i = 0; i < NUM_NUMA_NODES; i++) {
         if (lruvecs[i] && !list_empty(&split_lists[i])) {
+            pr_info("nucleus_split_migrater: putback split pages in node %d lruvec\n", i);
             putback_split_pages(&split_lists[i], lruvecs[i]);
         }
     }
@@ -198,7 +199,7 @@ static int nucleus_split_migrater(void *data)
     while (!kthread_should_stop()) {
 		pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
-        pr_info("nucleus_split_migrater: split %lu pages\n", split);
+        pr_info("nucleus_split_migrater: processed split requests, split %lu pages\n", split);
 
         msleep_interruptible(5000);
     }
