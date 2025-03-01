@@ -1,0 +1,10 @@
+      ksamplingd-3518    [039] .....   113.552961: ksamplingd: nr_sampled: 500000, nr_dram: 14025, nr_nvm: 485827, nr_write: 148, nr_throttled: 0 
+      ksamplingd-3518    [081] .....   117.560992: ksamplingd: nr_sampled: 1000000, nr_dram: 8, nr_nvm: 499968, nr_write: 24, nr_throttled: 0 
+      ksamplingd-3518    [081] .....   120.401193: ksamplingd: nr_sampled: 1500000, nr_dram: 10, nr_nvm: 499898, nr_write: 92, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   125.276206: ksamplingd: nr_sampled: 2000000, nr_dram: 296892, nr_nvm: 202417, nr_write: 691, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   131.041131: ksamplingd: nr_sampled: 2500000, nr_dram: 499990, nr_nvm: 2, nr_write: 8, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   136.752574: ksamplingd: nr_sampled: 3000000, nr_dram: 489327, nr_nvm: 10666, nr_write: 7, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   144.192561: ksamplingd: nr_sampled: 3500000, nr_dram: 3, nr_nvm: 499993, nr_write: 4, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   151.488307: ksamplingd: nr_sampled: 4000000, nr_dram: 14, nr_nvm: 499958, nr_write: 28, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   160.968492: ksamplingd: nr_sampled: 4500000, nr_dram: 479483, nr_nvm: 20513, nr_write: 4, nr_throttled: 0 
+      ksamplingd-3518    [083] .....   169.025073: ksamplingd: nr_sampled: 5000000, nr_dram: 391434, nr_nvm: 108557, nr_write: 9, nr_throttled: 0 
