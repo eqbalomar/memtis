@@ -28,6 +28,12 @@
 unsigned long nucleus_all_loads = 0;
 EXPORT_SYMBOL(nucleus_all_loads);
 
+unsigned long nucleus_loads_local = 0;
+EXPORT_SYMBOL(nucleus_loads_local);
+
+unsigned long nucleus_loads_remote = 0;
+EXPORT_SYMBOL(nucleus_loads_remote);
+
 void htmm_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
@@ -1377,6 +1383,11 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	goto mmap_unlock;
 
 	if (event == DRAMREAD || event == CXLREAD || event == NVMREAD) {
+		if (event == DRAMREAD) {
+			WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + get_sample_period(sample_period));
+		} else if (event == CXLREAD || event == NVMREAD) {
+			WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + get_sample_period(sample_period));
+		}
 		WRITE_ONCE(nucleus_all_loads, READ_ONCE(nucleus_all_loads) + get_sample_period(sample_period));
 	}
 

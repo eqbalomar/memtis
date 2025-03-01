@@ -29,8 +29,20 @@ u64 curr_loads;
 u64 all_loads;
 u64 smoothed_all_loads;
 
+u64 prev_loads_local;
+u64 curr_loads_local;
+u64 loads_local;
+u64 smoothed_loads_local;
+
+u64 prev_loads_remote;
+u64 curr_loads_remote;
+u64 loads_remote;
+u64 smoothed_loads_remote;
+
 extern int terminate_mon;
 extern unsigned long nucleus_all_loads;
+extern unsigned long nucleus_loads_local;
+extern unsigned long nucleus_loads_remote;
 extern unsigned long smoothed_lat_local;
 
 extern unsigned long smoothed_t_lat_hp;
@@ -120,6 +132,16 @@ void thread_fun_poll_perf(struct work_struct *work) {
         WRITE_ONCE(all_loads, curr_loads - prev_loads);
         WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
         prev_loads = curr_loads;
+
+        curr_loads_local = READ_ONCE(nucleus_loads_local);
+        WRITE_ONCE(loads_local, curr_loads_local - prev_loads_local);
+        WRITE_ONCE(smoothed_loads_local, (loads_local + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_local)>>EWMA_EXP_PERF);
+        prev_loads_local = curr_loads_local;
+
+        curr_loads_remote = READ_ONCE(nucleus_loads_remote);
+        WRITE_ONCE(loads_remote, curr_loads_remote - prev_loads_remote);
+        WRITE_ONCE(smoothed_loads_remote, (loads_remote + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote)>>EWMA_EXP_PERF);
+        prev_loads_remote = curr_loads_remote;
 
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
