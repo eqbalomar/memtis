@@ -24,6 +24,16 @@ static int nucleus_merger(void *data)
     unsigned int merged = 0;
 
     while (!kthread_should_stop()) {
+        if (!spin_trylock(&nucleus_merge_queue.request_queue_lock)) {
+            pr_info("nucleus_merger: merge queue locked\n");
+            goto next_iteration;
+        }
+        if (list_empty(&nucleus_merge_queue.request_queue)) {
+            pr_info("nucleus_merger: merge queue empty\n");
+            goto next_iteration_unlock_merge;
+        }
+        spin_unlock(&nucleus_merge_queue.request_queue_lock);
+
 		pr_info("nucleus_merger: processing merge requests\n");
         merged = 0;
 		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
@@ -45,6 +55,9 @@ static int nucleus_merger(void *data)
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
 		pr_info("nucleus_merger: processed merge requests, merged %u pages\n", merged);
 
+next_iteration_unlock_merge:
+        spin_unlock(&nucleus_merge_queue.request_queue_lock);
+next_iteration:
         msleep_interruptible(5000);
     }
     return 0;
@@ -53,12 +66,15 @@ static int nucleus_merger(void *data)
 int nucleus_merger_init(void)
 {
     int err = 0;
+    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_REMOTE_NUMA);;
     pr_info("nucleus_merger: init\n");
     knucleusmergerd = kthread_run(nucleus_merger, NULL, "knucleusmergerd");
     if (IS_ERR(knucleusmergerd)) {
         pr_err("nucleus_merger: failed to create kernel thread\n");
         err = PTR_ERR(knucleusmergerd);
         knucleusmergerd = NULL;
+    } else {
+        set_cpus_allowed_ptr(knucleusmergerd, cpumask);
     }
     return err;
 }
