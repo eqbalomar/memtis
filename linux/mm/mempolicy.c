@@ -2136,6 +2136,7 @@ struct page *alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma,
 
 	    //nid = orig_nid;
 
+#ifndef CONFIG_NUCLEUS
 	    if (orig_nid != nid) {
 		WRITE_ONCE(memcg->nodeinfo[orig_nid]->need_demotion, true);
 		kmigraterd_wakeup(orig_nid);
@@ -2145,7 +2146,8 @@ struct page *alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma,
 		WRITE_ONCE(memcg->nodeinfo[nid]->need_demotion, true);
 		kmigraterd_wakeup(nid);
 	    }
-	    
+#endif
+
 	    mpol_cond_put(pol);
 	    page = __alloc_pages_node(nid, gfp | __GFP_THISNODE, order);
 	    goto out;
