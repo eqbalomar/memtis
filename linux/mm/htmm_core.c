@@ -1023,8 +1023,11 @@ static int __update_pte_pginfo(struct vm_area_struct *vma, pmd_t *pmd,
     if (!pginfo)
 	goto pte_unlock;
 
+#ifndef CONFIG_NUCLEUS
     update_base_page(vma, page, pginfo);
-    pte_unmap_unlock(pte, ptl);
+#endif
+
+	pte_unmap_unlock(pte, ptl);
     if (htmm_cxl_mode) {
 	if (page_to_nid(page) == HTMM_CXL_LOCAL_NUMA)
 	    return 1;
@@ -1076,7 +1079,10 @@ static int __update_pmd_pginfo(struct vm_area_struct *vma, pud_t *pud,
 	    goto pmd_unlock;
 	}
 
+#ifndef CONFIG_NUCLEUS
 	update_huge_page(vma, pmd, page, address);
+#endif
+
 	if (htmm_cxl_mode) {
 	    if (page_to_nid(page) == HTMM_CXL_LOCAL_NUMA)
 		return 1;
