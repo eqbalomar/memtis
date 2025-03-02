@@ -296,9 +296,11 @@ free_req:
     }
 
     for (i = 0; i < NUM_NUMA_NODES; i++) {
-        spin_lock_irq(&lruvecs[i]->lru_lock);
-        __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, nr_taken[i]);
-        spin_unlock_irq(&lruvecs[i]->lru_lock);
+        if (lruvecs[i] && nr_taken > 0) {
+            spin_lock_irq(&lruvecs[i]->lru_lock);
+            __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, nr_taken[i]);
+            spin_unlock_irq(&lruvecs[i]->lru_lock);
+        }
     }
 
     local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
