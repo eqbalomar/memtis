@@ -29,6 +29,7 @@ struct nucleus_hugepage {
 struct nucleus_basepage {
 	// Initialized by sampling thread on first access
 	struct nucleus_hugepage *hp;
+	unsigned int offset;
 
 	// Updated by sampling thread on each access
 	unsigned long access_freq;

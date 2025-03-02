@@ -123,6 +123,7 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 			bp = &hp->bp_list[i];
 			bp->hp = hp;
 			bp->access_freq = 0;
+			bp->offset = i;
 			INIT_LIST_HEAD(&bp->list);
 		}
 		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);

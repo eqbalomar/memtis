@@ -477,7 +477,7 @@ __keep:
     return nr_promoted;
 }
 
-static unsigned long migrate_page_list_safe(struct list_head *page_list,
+unsigned long migrate_page_list_safe(struct list_head *page_list,
 	pg_data_t *pgdat, bool promotion)
 {
     LIST_HEAD(migrate_pages);

@@ -210,6 +210,7 @@ extern unsigned long get_nr_lru_pages_node(struct mem_cgroup *memcg, pg_data_t *
 extern void add_memcg_to_kmigraterd(struct mem_cgroup *memcg, int nid);
 extern void del_memcg_from_kmigraterd(struct mem_cgroup *memcg, int nid);
 extern struct mem_cgroup_per_node *next_memcg_cand(pg_data_t *pgdat);
+extern unsigned long migrate_page_list_safe(struct list_head *page_list, pg_data_t *pgdat, bool promotion);
 extern unsigned long get_memcg_demotion_watermark(unsigned long max_nr_pages);
 extern unsigned long get_memcg_promotion_watermark(unsigned long max_nr_pages);
 extern void kmigraterd_wakeup(int nid);

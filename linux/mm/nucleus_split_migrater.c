@@ -16,6 +16,12 @@ struct deferred_nucleus_request_queue nucleus_split_queue = {
 };
 EXPORT_SYMBOL(nucleus_split_queue);
 
+struct deferred_nucleus_request_queue nucleus_migrate_queue = {
+    .request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_migrate_queue.request_queue_lock),
+    .request_queue = LIST_HEAD_INIT(nucleus_migrate_queue.request_queue),
+};
+EXPORT_SYMBOL(nucleus_migrate_queue);
+
 static struct task_struct *knucleussplitmigraterd = NULL;
 
 #define NUM_NUMA_NODES 2
@@ -190,24 +196,163 @@ free_req:
     return split;
 }
 
+static void migrate_hugepages_and_basepages(unsigned int *promoted, unsigned int *demoted)
+{
+    unsigned long flags;
+    LIST_HEAD(promotion_list);
+    LIST_HEAD(demotion_list);
+    struct lruvec *lruvecs[NUM_NUMA_NODES] = {NULL};
+    struct nucleus_migrate_request *req, *req_tmp;
+    struct nucleus_hugepage *hp;
+    struct nucleus_basepage *bp;
+    struct page *page;
+    struct lruvec *lruvec;
+    pg_data_t *local_pgdat, *remote_pgdat;
+    pmd_t *pmd;
+    pte_t *pte;
+    unsigned long hp_addr, bp_addr;
+    unsigned int nr_taken[NUM_NUMA_NODES] = {0};
+    int i, node_id, target_node;
+
+    spin_lock_irqsave(&nucleus_migrate_queue.request_queue_lock, flags);
+    list_for_each_entry_safe(req, req_tmp, &nucleus_migrate_queue.request_queue, list) {
+        if (req->type == NUCLEUS_HUGEPAGE) {
+            hp = req->hp;
+        } else {
+            bp = req->bp;
+            hp = bp->hp;
+        }
+        hp_addr = hp->address << HPAGE_PMD_SHIFT;
+        mmap_read_lock(hp->mm);
+        pmd = mm_find_pmd(hp->mm, hp_addr);
+        if (!pmd) {
+            pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
+            mmap_read_unlock(hp->mm);
+            goto free_req;
+        }
+        if (pmd_trans_huge(*pmd)) {
+            page = pmd_page(*pmd);
+        } else {
+            bp_addr = hp_addr + (bp->offset << PAGE_SHIFT);
+            pte = pte_offset_map(pmd, bp_addr);
+            if (!pte) {
+                pr_info("nucleus_split_migrater: hp %lx bp %u pte not found\n", hp->address, bp->offset);
+                pte_unmap(pte);
+                mmap_read_unlock(hp->mm);
+                goto free_req;
+            }
+            page = pte_page(*pte);
+            pte_unmap(pte);
+        }
+        if (!page) {
+            pr_info("nucleus_split_migrater: hp %lx page not found\n", hp->address);
+            mmap_read_unlock(hp->mm);
+            goto free_req;
+        }
+
+        mmap_read_unlock(hp->mm);
+
+        lruvec = mem_cgroup_page_lruvec(page);
+        node_id = page_to_nid(page);
+        if (node_id >= NUM_NUMA_NODES) {
+            pr_info("nucleus_split_migrater: hp %lx invalid node id %d\n", hp->address, node_id);
+            goto free_req;
+        }
+        if (lruvecs[node_id] == NULL) {
+            lruvecs[node_id] = lruvec;
+        }
+
+        spin_lock_irq(&lruvec->lru_lock);
+        if (!__isolate_lru_page_prepare(page, 0)) {
+            spin_unlock_irq(&lruvec->lru_lock);
+            goto free_req;
+        }
+
+        if (unlikely(!get_page_unless_zero(page))) {
+            spin_unlock_irq(&lruvec->lru_lock);
+            goto free_req;
+        }
+
+        if (!TestClearPageLRU(page)) {
+            put_page(page);
+            spin_unlock_irq(&lruvec->lru_lock); 
+            goto free_req;
+        }
+
+        target_node = req->target_node;
+        if (target_node == HTMM_CXL_LOCAL_NUMA) {
+            list_move(&page->lru, &promotion_list);
+        } else {
+            list_move(&page->lru, &demotion_list);
+        }
+        update_lru_size(lruvec, page_lru(page), page_zonenum(page), -compound_nr(page));
+        spin_unlock_irq(&lruvec->lru_lock);
+        nr_taken[node_id]++;
+
+free_req:
+        atomic_dec(&hp->ref_count);
+        list_del(&req->list);
+        kfree(req);
+    }
+
+    for (i = 0; i < NUM_NUMA_NODES; i++) {
+        spin_lock_irq(&lruvecs[i]->lru_lock);
+        __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, nr_taken[i]);
+        spin_unlock_irq(&lruvecs[i]->lru_lock);
+    }
+
+    local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
+    *demoted = migrate_page_list_safe(&demotion_list, local_pgdat, false);
+    if (!list_empty(&demotion_list)) {
+        lruvec = lruvecs[HTMM_CXL_LOCAL_NUMA];
+        spin_lock_irq(&lruvec->lru_lock);
+		move_pages_to_lru(lruvec, &demotion_list);
+		__mod_node_page_state(local_pgdat, NR_ISOLATED_ANON, -nr_taken[HTMM_CXL_LOCAL_NUMA]);
+		spin_unlock_irq(&lruvec->lru_lock);
+    }
+
+    remote_pgdat = NODE_DATA(HTMM_CXL_REMOTE_NUMA);
+    *promoted = migrate_page_list_safe(&promotion_list, remote_pgdat, true);
+    if (!list_empty(&promotion_list)) {
+        lruvec = lruvecs[HTMM_CXL_REMOTE_NUMA];
+        spin_lock_irq(&lruvec->lru_lock);
+        move_pages_to_lru(lruvec, &promotion_list);
+        __mod_node_page_state(remote_pgdat, NR_ISOLATED_ANON, -nr_taken[HTMM_CXL_REMOTE_NUMA]);
+        spin_unlock_irq(&lruvec->lru_lock);
+    }
+
+    spin_unlock_irqrestore(&nucleus_migrate_queue.request_queue_lock, flags);
+}
+
 static int nucleus_split_migrater(void *data)
 {
-    unsigned int split = 0;
+    unsigned int split = 0, promoted = 0, demoted = 0;
     while (!kthread_should_stop()) {
         if (!spin_trylock(&nucleus_split_queue.request_queue_lock)) {
             pr_info("nucleus_split_migrater: split queue locked\n");
             goto next_iteration;
         }
-        if (list_empty(&nucleus_split_queue.request_queue)) {
-            pr_info("nucleus_split_migrater: split queue empty\n");
+        if (!spin_trylock(&nucleus_migrate_queue.request_queue_lock)) {
+            pr_info("nucleus_split_migrater: migrate queue locked\n");
             goto next_iteration_unlock_split;
         }
+        if (list_empty(&nucleus_split_queue.request_queue) && list_empty(&nucleus_migrate_queue.request_queue)) {
+            pr_info("nucleus_split_migrater: both split and migrate queues empty\n");
+            goto next_iteration_unlock_migrate;
+        }
+        spin_unlock(&nucleus_migrate_queue.request_queue_lock);
         spin_unlock(&nucleus_split_queue.request_queue_lock);
 
         pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
         pr_info("nucleus_split_migrater: processed split requests, split %u pages\n", split);
 
+        pr_info("nucleus_split_migrater: processing migrate requests\n");
+		migrate_hugepages_and_basepages(&promoted, &demoted);
+        pr_info("nucleus_split_migrater: processed migrate requests, promoted %u pages, demoted %u pages\n", promoted, demoted);
+
+next_iteration_unlock_migrate:
+        spin_unlock(&nucleus_migrate_queue.request_queue_lock);
 next_iteration_unlock_split:
         spin_unlock(&nucleus_split_queue.request_queue_lock);
 next_iteration:
