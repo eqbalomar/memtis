@@ -491,18 +491,24 @@ unsigned long migrate_page_list_safe(struct list_head *page_list,
 
 	page = lru_to_page(page_list);
 	list_del(&page->lru);
-	
+	pr_info("migrate_page_list_safe: locking page %p for promotion\n", page, promotion);
 	if (!trylock_page(page))
 	    goto __keep;
+#ifndef CONFIG_NUCLEUS
 	if (!PageActive(page) && htmm_mode != HTMM_NO_MIG)
 	    goto __keep_locked;
+#endif
+	pr_info("migrate_page_list_safe: checking page evictable %p\n", page);
 	if (unlikely(!page_evictable(page)))
 	    goto __keep_locked;
+	pr_info("migrate_page_list_safe: checking page writeback %p\n", page);
 	if (PageWriteback(page))
 	    goto __keep_locked;
+	pr_info("migrate_page_list_safe: checking page transhuge %p\n", page);
 	if (PageTransHuge(page) && !thp_migration_supported())
 	    goto __keep_locked;
 
+	pr_info("migrate_page_list_safe: adding page %p for promotion %d\n", page, promotion);
 	list_add(&page->lru, &migrate_pages);
 	unlock_page(page);
 	continue;
@@ -512,11 +518,13 @@ __keep:
 	list_add(&page->lru, &ret_pages);
     }
 
+	pr_info("migrate_page_list_safe: migrating pages\n");
     nr_migrated = migrate_page_list(&migrate_pages, pgdat, promotion);
     if (!list_empty(&migrate_pages))
 	list_splice(&migrate_pages, page_list);
 
     list_splice(&ret_pages, page_list);
+	pr_info("migrate_page_list_safe: migrated %lu pages\n",  nr_migrated);
     return nr_migrated;
 }
 
