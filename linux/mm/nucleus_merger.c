@@ -44,10 +44,15 @@ static int nucleus_merger(void *data)
 
             hpage = NULL;
             hp_addr = hp->address << HPAGE_PMD_SHIFT;
+            if (!hp->mm) {
+                pr_info("nucleus_merger: hp %lx mm not found\n", hp->address);
+                goto free_req;
+            }
             mmap_read_lock(hp->mm);
             merged += collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
             // collapse_huge_page will release mm lock
 
+free_req:
 			atomic_dec(&hp->ref_count);
 			list_del(&req->list);
 			kfree(req);

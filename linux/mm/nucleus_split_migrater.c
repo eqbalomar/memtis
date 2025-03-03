@@ -99,6 +99,10 @@ static unsigned int split_hugepages(void)
         hp = req->hp;
         // pr_info("nucleus_split_migrater: split hp %lx\n", hp->address);
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
+        if (!hp->mm) {
+            pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
+            goto free_req;
+        }
         mmap_read_lock(hp->mm);
         pmd = mm_find_pmd(hp->mm, hp_addr);
         if (!pmd) {
@@ -227,6 +231,10 @@ static void migrate_hugepages_and_basepages(unsigned int *promoted, unsigned int
             pr_info("nucleus_split_migrater: migrate hp %lx bp %u\n", hp->address, bp->offset);
         }
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
+        if (!hp->mm) {
+            pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
+            goto free_req;
+        }
         mmap_read_lock(hp->mm);
         pr_info("nucleus_split_migrater: locked mm for hp %lx\n", hp->address);
         pmd = mm_find_pmd(hp->mm, hp_addr);
