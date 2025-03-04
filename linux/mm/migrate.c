@@ -179,6 +179,10 @@ static bool try_to_unmap_clean(struct page_vma_mapped_walk *pvmw, struct page *p
     pte_t newpte;
     pginfo_t *pginfo;
 
+	if (!pvmw->pte) {
+		return false;
+	}
+
     VM_BUG_ON_PAGE(PageCompound(page), page);
     VM_BUG_ON_PAGE(!PageAnon(page), page);
     VM_BUG_ON_PAGE(!PageLocked(page), page);
@@ -267,11 +271,9 @@ static bool remove_migration_pte(struct page *page, struct vm_area_struct *vma,
 			continue;
 		}
 #endif
-#ifndef CONFIG_NUCLEUS
 #ifdef CONFIG_HTMM
 		if (rmap_walk_arg->unmap_clean && try_to_unmap_clean(&pvmw, new))
 		    continue;
-#endif
 #endif
 		get_page(new);
 		pte = pte_mkold(mk_pte(new, READ_ONCE(vma->vm_page_prot)));

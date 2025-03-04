@@ -2497,7 +2497,9 @@ static void __split_huge_page(struct page *page, struct list_head *list,
 	int i;
 
 	/* complete memcg works before add pages to LRU */
+	pr_info("__split_huge_page: split_page_memcg called\n");
 	split_page_memcg(head, nr);
+	pr_info("__split_huge_page: split_page_memcg done\n");
 
 	if (PageAnon(head) && PageSwapCache(head)) {
 		swp_entry_t entry = { .val = page_private(head) };
@@ -2512,6 +2514,7 @@ static void __split_huge_page(struct page *page, struct list_head *list,
 
 	ClearPageHasHWPoisoned(head);
 
+	pr_info("__split_huge_page: calling split_huge_page_tail\n");
 	for (i = nr - 1; i >= 1; i--) {
 		__split_huge_page_tail(head, i, lruvec, list);
 		/* Some pages can be beyond EOF: drop them from page cache */
@@ -2529,10 +2532,12 @@ static void __split_huge_page(struct page *page, struct list_head *list,
 					head + i, 0);
 		}
 	}
+	pr_info("__split_huge_page: split_huge_page_tail done\n");
 #ifdef CONFIG_HTMM
 	ClearPageHtmm(head);
 #endif
 	ClearPageCompound(head);
+	pr_info("__split_huge_page: ClearPageCompound done\n");
 	unlock_page_lruvec(lruvec);
 	/* Caller disabled irqs, so they are still disabled here */
 
@@ -2555,6 +2560,7 @@ static void __split_huge_page(struct page *page, struct list_head *list,
 	local_irq_enable();
 
 	remap_page(head, nr, PageAnon(head));
+	pr_info("__split_huge_page: remap_page done\n");
 
 	if (PageSwapCache(head)) {
 		swp_entry_t entry = { .val = page_private(head) };
@@ -2795,7 +2801,9 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 		goto out_unlock;
 	}
 
+	pr_info("split_huge_page_to_list: unmapping page\n");
 	unmap_page(head);
+	pr_info("split_huge_page_to_list: unmapped page\n");
 
 	/* block interrupt reentry in xa_lock and spinlock */
 	local_irq_disable();
@@ -2849,7 +2857,9 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 		}
 #endif
 #endif
+		pr_info("split_huge_page_to_list: calling __split_huge_page\n");
 		__split_huge_page(page, list, end);
+		pr_info("split_huge_page_to_list: __split_huge_page done\n");
 		ret = 0;
 	} else {
 		spin_unlock(&ds_queue->split_queue_lock);
@@ -2857,7 +2867,9 @@ fail:
 		if (mapping)
 			xa_unlock(&mapping->i_pages);
 		local_irq_enable();
+		pr_info("split_huge_page_to_list: calling remap_page\n");
 		remap_page(head, thp_nr_pages(head), false);
+		pr_info("split_huge_page_to_list: remap_page done\n");
 #if 0 //def CONFIG_HTMM
 		{
 		    struct mem_cgroup *memcg = page_memcg(head);
