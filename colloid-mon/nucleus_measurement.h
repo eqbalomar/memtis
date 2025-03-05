@@ -1,8 +1,8 @@
 #ifndef NUCLEUS_MEASUREMENT_H
 #define NUCLEUS_MEASUREMENT_H
 
-// #define SPINPOLL // TODO: configure this
-#define SAMPLE_INTERVAL_MS 10 // Only used if SPINPOLL is not set
+#define SPINPOLL // TODO: configure this
+#define SAMPLE_INTERVAL_MS 10
 #ifdef SPINPOLL
 #define EWMA_EXP 5
 #else

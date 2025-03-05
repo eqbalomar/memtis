@@ -52,6 +52,9 @@ u64 smoothed_occ_remote, smoothed_inserts_remote;
 u64 p_lo, p_hi;
 u64 nucleus_llc_misses;
 
+static u64 prev_tsc = 0;
+static u64 curr_tsc = 0;
+
 extern unsigned long smoothed_lat_local;
 extern unsigned long smoothed_lat_remote;
 
@@ -156,6 +159,13 @@ void thread_fun_poll_cha(struct work_struct *work) {
     u64 abs_diff, cur_p, target_p, dlimit;
     
     while (budget) {
+        curr_tsc = rdtscp();
+        if (curr_tsc < prev_tsc + SAMPLE_INTERVAL_MS * cpu_khz) {
+            budget--;
+            continue;
+        }
+        prev_tsc = curr_tsc;
+
         // Sample counters and update state
         // TODO: For starters using CHA0 for local and CHA1 for remote
         sample_cha_ctr(0, 0); // CHA0 occupancy
