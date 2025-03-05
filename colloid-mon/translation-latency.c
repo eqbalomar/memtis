@@ -24,25 +24,28 @@ static u64 curr_tsc = 0;
 u64 walk_completed;
 u64 smoothed_walk_completed;
 
-u64 prev_loads;
-u64 curr_loads;
-u64 all_loads;
-u64 smoothed_all_loads;
+// u64 prev_loads;
+// u64 curr_loads;
+// u64 all_loads;
+// u64 smoothed_all_loads;
 
-u64 prev_loads_local;
-u64 curr_loads_local;
-u64 loads_local;
-u64 smoothed_loads_local;
+// u64 prev_loads_local;
+// u64 curr_loads_local;
+// u64 loads_local;
+// u64 smoothed_loads_local;
 
-u64 prev_loads_remote;
-u64 curr_loads_remote;
-u64 loads_remote;
-u64 smoothed_loads_remote;
+// u64 prev_loads_remote;
+// u64 curr_loads_remote;
+// u64 loads_remote;
+// u64 smoothed_loads_remote;
+
+extern u64 nucleus_llc_misses;
+u64 smoothed_llc_misses;
 
 extern int terminate_mon;
-extern unsigned long nucleus_all_loads;
-extern unsigned long nucleus_loads_local;
-extern unsigned long nucleus_loads_remote;
+// extern unsigned long nucleus_all_loads;
+// extern unsigned long nucleus_loads_local;
+// extern unsigned long nucleus_loads_remote;
 extern unsigned long smoothed_lat_local;
 
 extern unsigned long smoothed_t_lat_hp;
@@ -118,7 +121,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
     // pr_info("nucleus thread_fun_poll_perf");
     int event, core;
     u32 budget = WORKER_BUDGET;
-    u64 t_lat_bp, t_lat_hp;
+    u64 t_lat_bp, t_lat_hp, curr_llc_misses;
     
     while (budget) {
         curr_tsc = rdtscp();
@@ -128,20 +131,23 @@ void thread_fun_poll_perf(struct work_struct *work) {
         }
         prev_tsc = curr_tsc;
 
-        curr_loads = READ_ONCE(nucleus_all_loads);
-        WRITE_ONCE(all_loads, curr_loads - prev_loads);
-        WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
-        prev_loads = curr_loads;
+        // curr_loads = READ_ONCE(nucleus_all_loads);
+        // WRITE_ONCE(all_loads, curr_loads - prev_loads);
+        // WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
+        // prev_loads = curr_loads;
 
-        curr_loads_local = READ_ONCE(nucleus_loads_local);
-        WRITE_ONCE(loads_local, curr_loads_local - prev_loads_local);
-        WRITE_ONCE(smoothed_loads_local, (loads_local + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_local)>>EWMA_EXP_PERF);
-        prev_loads_local = curr_loads_local;
+        // curr_loads_local = READ_ONCE(nucleus_loads_local);
+        // WRITE_ONCE(loads_local, curr_loads_local - prev_loads_local);
+        // WRITE_ONCE(smoothed_loads_local, (loads_local + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_local)>>EWMA_EXP_PERF);
+        // prev_loads_local = curr_loads_local;
 
-        curr_loads_remote = READ_ONCE(nucleus_loads_remote);
-        WRITE_ONCE(loads_remote, curr_loads_remote - prev_loads_remote);
-        WRITE_ONCE(smoothed_loads_remote, (loads_remote + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote)>>EWMA_EXP_PERF);
-        prev_loads_remote = curr_loads_remote;
+        // curr_loads_remote = READ_ONCE(nucleus_loads_remote);
+        // WRITE_ONCE(loads_remote, curr_loads_remote - prev_loads_remote);
+        // WRITE_ONCE(smoothed_loads_remote, (loads_remote + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote)>>EWMA_EXP_PERF);
+        // prev_loads_remote = curr_loads_remote;
+
+        curr_llc_misses = READ_ONCE(nucleus_llc_misses);
+        WRITE_ONCE(smoothed_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_llc_misses)>>EWMA_EXP_PERF);
 
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
@@ -162,14 +168,14 @@ void thread_fun_poll_perf(struct work_struct *work) {
         WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed)>>EWMA_EXP_PERF);
 
         t_lat_hp = 3 * smoothed_lat_local;
-        if (smoothed_all_loads > 0 && smoothed_walk_completed < smoothed_all_loads) {
-            t_lat_hp = (smoothed_walk_completed * 3 * smoothed_lat_local) / smoothed_all_loads;
+        if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
+            t_lat_hp = (smoothed_walk_completed * 3 * smoothed_lat_local) / smoothed_llc_misses;
         }
         WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
 
         t_lat_bp = 4 * smoothed_lat_local;
-        if (smoothed_all_loads > 0 && smoothed_walk_completed < smoothed_all_loads) {
-            t_lat_bp = (smoothed_walk_completed * 4 * smoothed_lat_local) / smoothed_all_loads;
+        if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
+            t_lat_bp = (smoothed_walk_completed * 4 * smoothed_lat_local) / smoothed_llc_misses;
         }
         WRITE_ONCE(smoothed_t_lat_bp, t_lat_bp);
 

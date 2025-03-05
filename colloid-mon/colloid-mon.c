@@ -45,9 +45,12 @@ module_param(app_num_cores, int, 0);
 #define NUM_CHA_BOXES 18 // There are 32 CHA boxes in icelake server. After the first 18 boxes, the couter offsets change.
 #define NUM_CHA_COUNTERS 4
 
+#define NUM_CHA_SLICES 32
+
 u64 smoothed_occ_local, smoothed_inserts_local;
 u64 smoothed_occ_remote, smoothed_inserts_remote;
 u64 p_lo, p_hi;
+u64 nucleus_llc_misses;
 
 extern unsigned long smoothed_lat_local;
 extern unsigned long smoothed_lat_remote;
@@ -148,7 +151,7 @@ void thread_fun_poll_cha(struct work_struct *work) {
     #else
     u32 budget = 1;
     #endif
-    u64 cum_occ, delta_tsc, cur_occ, cur_inserts;
+    u64 cum_occ, delta_tsc, cur_occ, cur_inserts, cur_llc_misses;
     u64 cur_lat_local, cur_lat_remote;
     u64 abs_diff, cur_p, target_p, dlimit;
     
@@ -162,6 +165,7 @@ void thread_fun_poll_cha(struct work_struct *work) {
 
         cur_occ = cur_ctr_val[0][0] - prev_ctr_val[0][0];
         cur_inserts = cur_ctr_val[0][1] - prev_ctr_val[0][1];
+        cur_llc_misses = cur_inserts * NUM_CHA_SLICES;
         WRITE_ONCE(smoothed_occ_local, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_local)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_local, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_local)>>EWMA_EXP);
         cur_lat_local = MIN_LOCAL_LAT * LATENCY_PRECISION;
@@ -176,6 +180,8 @@ void thread_fun_poll_cha(struct work_struct *work) {
 
         cur_occ = cur_ctr_val[1][0] - prev_ctr_val[1][0];
         cur_inserts = cur_ctr_val[1][1] - prev_ctr_val[1][1];
+        cur_llc_misses += cur_inserts * NUM_CHA_SLICES;
+        WRITE_ONCE(nucleus_llc_misses, cur_llc_misses);
         WRITE_ONCE(smoothed_occ_remote, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_remote)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_remote)>>EWMA_EXP);
         cur_lat_remote = MIN_REMOTE_LAT * LATENCY_PRECISION;
