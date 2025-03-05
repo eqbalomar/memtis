@@ -179,7 +179,7 @@ static bool try_to_unmap_clean(struct page_vma_mapped_walk *pvmw, struct page *p
     pte_t newpte;
     pginfo_t *pginfo;
 
-	if (!pvmw->pte) {
+	if (!pvmw->pte || !pvmw->vma) {
 		return false;
 	}
 
