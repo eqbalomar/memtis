@@ -1399,6 +1399,15 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
+#ifdef CONFIG_NUCLEUS
+	if (event == DRAMREAD) {
+		memcg->nr_dram_sampled++;
+	}
+	memcg->nr_sampled++;
+	memcg->nr_sampled_for_split++;
+	// memcg->nr_max_sampled++;
+	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
+#else
     /* increase sample counts only for valid records */
     ret = __update_pginfo(vma, address);
     if (ret == 1) { /* memory accesses to DRAM */
@@ -1415,6 +1424,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
     } else
 	goto mmap_unlock;
+#endif
     
     /* cooling and split decision */
     if (memcg->nr_sampled % htmm_cooling_period == 0 ||
