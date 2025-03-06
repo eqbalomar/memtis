@@ -400,7 +400,7 @@ next_iteration:
 int nucleus_split_migrater_init(void)
 {
     int err = 0;
-    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_REMOTE_NUMA);;
+    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);;
     pr_info("nucleus_split_migrater: init\n");
     knucleussplitmigraterd = kthread_run(nucleus_split_migrater, NULL, "knucleussplitmigraterd");
     if (IS_ERR(knucleussplitmigraterd)) {

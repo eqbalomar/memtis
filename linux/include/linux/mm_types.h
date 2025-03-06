@@ -28,7 +28,7 @@
 
 
 #ifdef CONFIG_NUCLEUS
-#define NUCLEUS_HUGEPAGES_HASH_BITS 10
+#define NUCLEUS_HUGEPAGES_HASH_BITS 16
 #endif
 
 struct address_space;

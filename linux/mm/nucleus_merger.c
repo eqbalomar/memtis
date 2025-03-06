@@ -71,7 +71,7 @@ next_iteration:
 int nucleus_merger_init(void)
 {
     int err = 0;
-    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_REMOTE_NUMA);;
+    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);;
     pr_info("nucleus_merger: init\n");
     knucleusmergerd = kthread_run(nucleus_merger, NULL, "knucleusmergerd");
     if (IS_ERR(knucleusmergerd)) {
