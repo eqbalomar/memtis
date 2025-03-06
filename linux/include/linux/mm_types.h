@@ -15,6 +15,7 @@
 #include <linux/page-flags-layout.h>
 #include <linux/workqueue.h>
 #include <linux/seqlock.h>
+#include <linux/hashtable.h>
 
 #include <asm/mmu.h>
 
@@ -615,7 +616,7 @@ struct mm_struct {
 #endif
 
 #ifdef CONFIG_NUCLEUS
-		struct hlist_head nucleus_hugepages_hash[NUCLEUS_HUGEPAGES_HASH_BITS];
+		DECLARE_HASHTABLE(nucleus_hugepages_hash, NUCLEUS_HUGEPAGES_HASH_BITS);
 #endif
 	} __randomize_layout;
 
