@@ -727,7 +727,7 @@ static inline pginfo_t *get_pginfo_from_pte(pte_t *pte)
 {
     struct page *page = virt_to_page((unsigned long)pte);
     unsigned long idx;
-	if (!page) {
+	if (!page || !page->pginfo) {
 		return NULL;
 	}
 
