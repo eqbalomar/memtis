@@ -26,6 +26,7 @@ static struct task_struct *knucleussplitmigraterd = NULL;
 
 #define NUM_NUMA_NODES 2
 #define CAPACITY_THRES 90
+#define LRU_ALL	((1 << NR_LRU_LISTS) - 1)
 
 static pmd_t *mm_find_pmd(struct mm_struct *mm, unsigned long address)
 {
@@ -347,12 +348,13 @@ free_req:
         nr_to_demote = 0;
 
         cur_nr_pages = 0;
+        mem_cgroup_flush_stats();
         list_for_each_entry_safe(page, page_tmp, &demotion_list, lru) {
             memcg = page_memcg(page);
             max_nr_pages = remote_pgdat->node_present_pages;
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {
-                cur_nr_pages = get_nr_lru_pages_node(memcg, remote_pgdat);
+                cur_nr_pages = mem_cgroup_node_nr_lru_pages(memcg, HTMM_CXL_REMOTE_NUMA, LRU_ALL, true);
                 pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
@@ -370,12 +372,13 @@ free_req:
         pr_info("nucleus_split_migrater: nr_to_demote %u, nr_demoted %u\n", nr_to_demote, nr_demoted);
 
         cur_nr_pages = 0;
+        mem_cgroup_flush_stats();
         list_for_each_entry_safe(page, page_tmp, &promotion_list, lru) {
             memcg = page_memcg(page);
             max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {
-                cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
+                cur_nr_pages = mem_cgroup_node_nr_lru_pages(memcg, HTMM_CXL_LOCAL_NUMA, LRU_ALL, true);
                 pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
