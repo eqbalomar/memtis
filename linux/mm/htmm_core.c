@@ -1397,9 +1397,9 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 		WRITE_ONCE(nucleus_all_loads, READ_ONCE(nucleus_all_loads) + get_sample_period(sample_period));
 	}
 
+#ifdef CONFIG_NUCLEUS
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
-#ifdef CONFIG_NUCLEUS
 	if (event == DRAMREAD) {
 		memcg->nr_dram_sampled++;
 	}

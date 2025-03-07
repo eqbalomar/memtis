@@ -21,7 +21,7 @@ static int nucleus_merger(void *data)
     struct nucleus_hugepage *hp;
     struct page *hpage;
 	int target_node;
-    unsigned int merged = 0;
+    unsigned long merged = 0;
 
     while (!kthread_should_stop()) {
         if (!spin_trylock(&nucleus_merge_queue.request_queue_lock)) {
@@ -58,7 +58,7 @@ free_req:
 			kfree(req);
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
-		pr_info("nucleus_merger: processed merge requests, merged %u pages\n", merged);
+		pr_info("nucleus_merger: processed merge requests, merged %lu pages\n", merged);
 
 next_iteration_unlock_merge:
         spin_unlock(&nucleus_merge_queue.request_queue_lock);

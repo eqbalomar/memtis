@@ -74,7 +74,7 @@ static void check_failed_list(struct list_head *tmp, struct list_head *failed_li
     }
 }
 
-static unsigned int split_hugepages(void)
+static unsigned long split_hugepages(void)
 {
     unsigned long flags;
     LIST_HEAD(failed_list);
@@ -86,7 +86,7 @@ static unsigned int split_hugepages(void)
     struct lruvec *lruvec;
     pmd_t *pmd;
     unsigned long hp_addr;
-    unsigned int split = 0;
+    unsigned long split = 0;
     int i, node_id;
     bool skip_iso;
     for (i = 0; i < NUM_NUMA_NODES; i++) {
@@ -201,7 +201,7 @@ free_req:
     return split;
 }
 
-static void migrate_hugepages_and_basepages(unsigned int *promoted, unsigned int *demoted)
+static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned long *demoted)
 {
     unsigned long flags;
     struct nucleus_migrate_request *req, *req_tmp;
@@ -215,15 +215,15 @@ static void migrate_hugepages_and_basepages(unsigned int *promoted, unsigned int
     pte_t *pte;
     unsigned long hp_addr, bp_addr;
     int i, node_id, target_node;
-    unsigned int nr_promoted, nr_to_promote, total_promoted = 0;
-    unsigned int nr_demoted, nr_to_demote, total_demoted = 0;
+    unsigned long nr_promoted, nr_to_promote, total_promoted = 0;
+    unsigned long nr_demoted, nr_to_demote, total_demoted = 0;
     unsigned long max_nr_pages, cur_nr_pages, compound_nr_page;
     LIST_HEAD(promotion_list);
     LIST_HEAD(demotion_list);
     LIST_HEAD(failed_promotion_list);
     LIST_HEAD(failed_demotion_list);
     struct lruvec *lruvecs[NUM_NUMA_NODES] = {NULL};
-    unsigned int nr_taken[NUM_NUMA_NODES] = {0};
+    unsigned long nr_taken[NUM_NUMA_NODES] = {0}, cur_nr_taken[NUM_NUMA_NODES] = {0};
 
     lru_add_drain();
 
@@ -335,6 +335,7 @@ free_req:
             spin_lock_irq(&lruvecs[i]->lru_lock);
             __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, nr_taken[i]);
             spin_unlock_irq(&lruvecs[i]->lru_lock);
+            cur_nr_taken[i] = nr_taken[i];
         }
     }
 
@@ -354,7 +355,7 @@ free_req:
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {
                 cur_nr_pages = get_nr_lru_pages_node(memcg, remote_pgdat);
-                cur_nr_pages += nr_taken[HTMM_CXL_REMOTE_NUMA];
+                cur_nr_pages += cur_nr_taken[HTMM_CXL_REMOTE_NUMA];
                 pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
@@ -366,11 +367,11 @@ free_req:
 
         nr_demoted = migrate_page_list_safe(&cur_demotion_list, local_pgdat, false);
         total_demoted += nr_demoted;
-        nr_taken[HTMM_CXL_LOCAL_NUMA] -= nr_demoted;
+        cur_nr_taken[HTMM_CXL_LOCAL_NUMA] -= nr_demoted;
         if (!list_empty(&cur_demotion_list)) {
             list_splice_tail(&cur_demotion_list, &failed_demotion_list);
         }
-        pr_info("nucleus_split_migrater: nr_to_demote %u, nr_demoted %u\n", nr_to_demote, nr_demoted);
+        pr_info("nucleus_split_migrater: nr_to_demote %lu, nr_demoted %lu\n", nr_to_demote, nr_demoted);
 
         cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &promotion_list, lru) {
@@ -379,7 +380,7 @@ free_req:
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {
                 cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
-                cur_nr_pages += nr_taken[HTMM_CXL_LOCAL_NUMA];
+                cur_nr_pages += cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
                 pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
@@ -391,11 +392,11 @@ free_req:
 
         nr_promoted = migrate_page_list_safe(&cur_promotion_list, remote_pgdat, true);
         total_promoted += nr_promoted;
-        nr_taken[HTMM_CXL_REMOTE_NUMA] -= nr_promoted;
+        cur_nr_taken[HTMM_CXL_REMOTE_NUMA] -= nr_promoted;
         if (!list_empty(&cur_promotion_list)) {
             list_splice_tail(&cur_promotion_list, &failed_promotion_list);
         }
-        pr_info("nucleus_split_migrater: nr_to_promote %u, nr_promoted %u\n", nr_to_promote, nr_promoted);
+        pr_info("nucleus_split_migrater: nr_to_promote %lu, nr_promoted %lu\n", nr_to_promote, nr_promoted);
     } while (nr_demoted > 0 || nr_promoted > 0);
 
     list_splice_tail(&failed_demotion_list, &demotion_list);
@@ -409,7 +410,7 @@ free_req:
             } else {
                 move_pages_to_lru(lruvecs[i], &promotion_list);
             }
-            __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, nr_taken[i]);
+            __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, -nr_taken[i]);
             spin_unlock_irq(&lruvecs[i]->lru_lock);
         }
     }
@@ -423,7 +424,7 @@ free_req:
 
 static int nucleus_split_migrater(void *data)
 {
-    unsigned int split = 0, promoted = 0, demoted = 0;
+    unsigned long split = 0, promoted = 0, demoted = 0;
     while (!kthread_should_stop()) {
         if (!spin_trylock(&nucleus_split_queue.request_queue_lock)) {
             pr_info("nucleus_split_migrater: split queue locked\n");
@@ -442,11 +443,11 @@ static int nucleus_split_migrater(void *data)
 
         pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
-        pr_info("nucleus_split_migrater: processed split requests, split %u pages\n", split);
+        pr_info("nucleus_split_migrater: processed split requests, split %lu pages\n", split);
 
         pr_info("nucleus_split_migrater: processing migrate requests\n");
 		migrate_hugepages_and_basepages(&promoted, &demoted);
-        pr_info("nucleus_split_migrater: processed migrate requests, promoted %u pages, demoted %u pages\n", promoted, demoted);
+        pr_info("nucleus_split_migrater: processed migrate requests, promoted %lu pages, demoted %lu pages\n", promoted, demoted);
 
 next_iteration_unlock_migrate:
         spin_unlock(&nucleus_migrate_queue.request_queue_lock);

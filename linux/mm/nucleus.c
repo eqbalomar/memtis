@@ -155,6 +155,7 @@ static void perform_cooling(struct mem_cgroup *memcg, struct nucleus_hugepage *h
 
     if (memcg_cclock > hp->cooling_clock) {
 	    diff = memcg_cclock - hp->cooling_clock;
+		diff = diff > 63 ? 63 : diff;
 		// pr_info("nucleus: perform cooling for hp %lx, diff %d\n", hp->address, diff);
 
 	    /* perform cooling */

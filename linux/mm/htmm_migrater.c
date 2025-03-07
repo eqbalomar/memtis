@@ -1096,9 +1096,6 @@ static int kmigraterd_demotion(pg_data_t *pgdat)
 	if (kthread_should_stop())
 	    break;
 
-/* NUCLEUS: Disable demotion */
-#ifndef CONFIG_NUCLEUS
-
 	pn = next_memcg_cand(pgdat);
 	if (!pn) {
 	    msleep_interruptible(1000);
@@ -1142,9 +1139,6 @@ static int kmigraterd_demotion(pg_data_t *pgdat)
 	  wait_event_interruptible_timeout(pgdat->kmigraterd_wait,
 		  need_direct_demotion(pgdat, memcg),
 		  msecs_to_jiffies(htmm_demotion_period_in_ms));	    
-#else
-	msleep_interruptible(htmm_demotion_period_in_ms);
-#endif
 	}
 
     return 0;
@@ -1187,9 +1181,6 @@ static int kmigraterd_promotion(pg_data_t *pgdat)
 
 	if (kthread_should_stop())
 	    break;
-
-/* NUCLEUS: Disable promotion */
-#ifndef CONFIG_NUCLEUS
 
 	pn = next_memcg_cand(pgdat);
 	if (!pn) {
@@ -1234,8 +1225,6 @@ static int kmigraterd_promotion(pg_data_t *pgdat)
 		upper_pgdat = htmm_cxl_mode ? NODE_DATA(HTMM_CXL_LOCAL_NUMA) : NODE_DATA(next_promotion_node(pgdat->node_id));
 		demote_node_active_colloid(upper_pgdat, memcg);
 	}
-
-#endif
 
 	msleep_interruptible(htmm_promotion_period_in_ms);
     }
