@@ -22,10 +22,33 @@ struct deferred_nucleus_request_queue nucleus_migrate_queue = {
 };
 EXPORT_SYMBOL(nucleus_migrate_queue);
 
+DECLARE_WAIT_QUEUE_HEAD(nucleus_split_migrate_wait);
+EXPORT_SYMBOL(nucleus_split_migrate_wait);
+
 static struct task_struct *knucleussplitmigraterd = NULL;
 
 #define NUM_NUMA_NODES 2
 #define CAPACITY_THRES 95
+
+static bool has_split_or_migrate_requests(void)
+{
+    bool ret = false;
+    unsigned long flags;
+
+    spin_lock_irqsave(&nucleus_split_queue.request_queue_lock, flags);
+    ret = !list_empty(&nucleus_split_queue.request_queue);
+    spin_unlock_irqrestore(&nucleus_split_queue.request_queue_lock, flags);
+
+    if (ret) {
+        return ret;
+    }
+
+    spin_lock_irqsave(&nucleus_migrate_queue.request_queue_lock, flags);
+    ret = !list_empty(&nucleus_migrate_queue.request_queue);
+    spin_unlock_irqrestore(&nucleus_migrate_queue.request_queue_lock, flags);
+
+    return ret;
+}
 
 static pmd_t *mm_find_pmd(struct mm_struct *mm, unsigned long address)
 {
@@ -53,7 +76,6 @@ static pmd_t *mm_find_pmd(struct mm_struct *mm, unsigned long address)
 out:
 	return pmd;
 }
-
 
 static void check_failed_list(struct list_head *tmp, struct list_head *failed_list)
 {
@@ -426,20 +448,7 @@ static int nucleus_split_migrater(void *data)
 {
     unsigned long split = 0, promoted = 0, demoted = 0;
     while (!kthread_should_stop()) {
-        if (!spin_trylock(&nucleus_split_queue.request_queue_lock)) {
-            pr_info("nucleus_split_migrater: split queue locked\n");
-            goto next_iteration;
-        }
-        if (!spin_trylock(&nucleus_migrate_queue.request_queue_lock)) {
-            pr_info("nucleus_split_migrater: migrate queue locked\n");
-            goto next_iteration_unlock_split;
-        }
-        if (list_empty(&nucleus_split_queue.request_queue) && list_empty(&nucleus_migrate_queue.request_queue)) {
-            pr_info("nucleus_split_migrater: both split and migrate queues empty\n");
-            goto next_iteration_unlock_migrate;
-        }
-        spin_unlock(&nucleus_migrate_queue.request_queue_lock);
-        spin_unlock(&nucleus_split_queue.request_queue_lock);
+        wait_event_interruptible(nucleus_split_migrate_wait, has_split_or_migrate_requests());
 
         pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
@@ -448,13 +457,6 @@ static int nucleus_split_migrater(void *data)
         pr_info("nucleus_split_migrater: processing migrate requests\n");
 		migrate_hugepages_and_basepages(&promoted, &demoted);
         pr_info("nucleus_split_migrater: processed migrate requests, promoted %lu pages, demoted %lu pages\n", promoted, demoted);
-
-next_iteration_unlock_migrate:
-        spin_unlock(&nucleus_migrate_queue.request_queue_lock);
-next_iteration_unlock_split:
-        spin_unlock(&nucleus_split_queue.request_queue_lock);
-next_iteration:
-        msleep_interruptible(5000);
     }
     return 0;
 }

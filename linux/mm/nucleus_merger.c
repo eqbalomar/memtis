@@ -12,7 +12,22 @@ struct deferred_nucleus_request_queue nucleus_merge_queue = {
 };
 EXPORT_SYMBOL(nucleus_merge_queue);
 
+DECLARE_WAIT_QUEUE_HEAD(nucleus_merge_wait);
+EXPORT_SYMBOL(nucleus_merge_wait);
+
 static struct task_struct *knucleusmergerd = NULL;
+
+static bool has_merge_requests(void)
+{
+    bool ret = false;
+    unsigned long flags;
+
+    spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
+    ret = !list_empty(&nucleus_merge_queue.request_queue);
+    spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
+
+    return ret;
+}
 
 static int nucleus_merger(void *data)
 {
@@ -24,15 +39,7 @@ static int nucleus_merger(void *data)
     unsigned long merged = 0;
 
     while (!kthread_should_stop()) {
-        if (!spin_trylock(&nucleus_merge_queue.request_queue_lock)) {
-            pr_info("nucleus_merger: merge queue locked\n");
-            goto next_iteration;
-        }
-        if (list_empty(&nucleus_merge_queue.request_queue)) {
-            pr_info("nucleus_merger: merge queue empty\n");
-            goto next_iteration_unlock_merge;
-        }
-        spin_unlock(&nucleus_merge_queue.request_queue_lock);
+        wait_event_interruptible(nucleus_merge_wait, has_merge_requests());
 
 		pr_info("nucleus_merger: processing merge requests\n");
         merged = 0;
@@ -59,11 +66,6 @@ free_req:
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
 		pr_info("nucleus_merger: processed merge requests, merged %lu pages\n", merged);
-
-next_iteration_unlock_merge:
-        spin_unlock(&nucleus_merge_queue.request_queue_lock);
-next_iteration:
-        msleep_interruptible(5000);
     }
     return 0;
 }
