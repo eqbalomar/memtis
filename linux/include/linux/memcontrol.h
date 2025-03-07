@@ -423,8 +423,6 @@ enum page_memcg_data_flags {
 
 static inline bool PageMemcgKmem(struct page *page);
 
-unsigned long mem_cgroup_node_nr_lru_pages(struct mem_cgroup *memcg, int nid, unsigned int lru_mask, bool tree);
-
 /*
  * After the initialization objcg->memcg is always pointing at
  * a valid memcg, but can be atomically swapped to the parent memcg.

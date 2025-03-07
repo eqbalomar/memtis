@@ -125,6 +125,7 @@ unsigned long get_nr_lru_pages_node(struct mem_cgroup *memcg, pg_data_t *pgdat)
    
     return nr_pages;
 }
+EXPORT_SYMBOL(get_nr_lru_pages_node);
 
 static unsigned long need_lowertier_promotion(pg_data_t *pgdat, struct mem_cgroup *memcg)
 {
