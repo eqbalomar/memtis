@@ -366,6 +366,7 @@ free_req:
 
         nr_demoted = migrate_page_list_safe(&cur_demotion_list, local_pgdat, false);
         total_demoted += nr_demoted;
+        nr_taken[HTMM_CXL_LOCAL_NUMA] -= nr_demoted;
         if (!list_empty(&cur_demotion_list)) {
             list_splice_tail(&cur_demotion_list, &failed_demotion_list);
         }
@@ -390,6 +391,7 @@ free_req:
 
         nr_promoted = migrate_page_list_safe(&cur_promotion_list, remote_pgdat, true);
         total_promoted += nr_promoted;
+        nr_taken[HTMM_CXL_REMOTE_NUMA] -= nr_promoted;
         if (!list_empty(&cur_promotion_list)) {
             list_splice_tail(&cur_promotion_list, &failed_promotion_list);
         }
