@@ -25,6 +25,11 @@ EXPORT_SYMBOL(nucleus_migrate_queue);
 DECLARE_WAIT_QUEUE_HEAD(nucleus_split_migrate_wait);
 EXPORT_SYMBOL(nucleus_split_migrate_wait);
 
+atomic_t nucleus_process_split_migrate = ATOMIC_INIT(0);
+EXPORT_SYMBOL(nucleus_process_split_migrate);
+
+#define NUCLEUS_SPLIT_MIGRATER_TIMEOUT 5000 // 5 seconds
+
 static struct task_struct *knucleussplitmigraterd = NULL;
 
 #define NUM_NUMA_NODES 2
@@ -32,22 +37,10 @@ static struct task_struct *knucleussplitmigraterd = NULL;
 
 static bool has_split_or_migrate_requests(void)
 {
-    bool ret = false;
-    unsigned long flags;
-
-    spin_lock_irqsave(&nucleus_split_queue.request_queue_lock, flags);
-    ret = !list_empty(&nucleus_split_queue.request_queue);
-    spin_unlock_irqrestore(&nucleus_split_queue.request_queue_lock, flags);
-
-    if (ret) {
-        return ret;
+    if (atomic_read(&nucleus_process_split_migrate) > 0) {
+        return true;
     }
-
-    spin_lock_irqsave(&nucleus_migrate_queue.request_queue_lock, flags);
-    ret = !list_empty(&nucleus_migrate_queue.request_queue);
-    spin_unlock_irqrestore(&nucleus_migrate_queue.request_queue_lock, flags);
-
-    return ret;
+    return false;
 }
 
 static pmd_t *mm_find_pmd(struct mm_struct *mm, unsigned long address)
@@ -447,8 +440,13 @@ free_req:
 static int nucleus_split_migrater(void *data)
 {
     unsigned long split = 0, promoted = 0, demoted = 0;
+    int ret;
     while (!kthread_should_stop()) {
-        wait_event_interruptible(nucleus_split_migrate_wait, has_split_or_migrate_requests());
+        ret = wait_event_interruptible_timeout(nucleus_split_migrate_wait, has_split_or_migrate_requests(), msecs_to_jiffies(NUCLEUS_SPLIT_MIGRATER_TIMEOUT));
+        if (ret == 0) {
+            // pr_info("nucleus_split_migrater: timeout\n");
+            continue;
+        }
 
         pr_info("nucleus_split_migrater: processing split requests\n");
 		split = split_hugepages();
@@ -457,6 +455,7 @@ static int nucleus_split_migrater(void *data)
         pr_info("nucleus_split_migrater: processing migrate requests\n");
 		migrate_hugepages_and_basepages(&promoted, &demoted);
         pr_info("nucleus_split_migrater: processed migrate requests, promoted %lu pages, demoted %lu pages\n", promoted, demoted);
+        atomic_set(&nucleus_process_split_migrate, 0);
     }
     return 0;
 }

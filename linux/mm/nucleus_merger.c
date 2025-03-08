@@ -15,18 +15,19 @@ EXPORT_SYMBOL(nucleus_merge_queue);
 DECLARE_WAIT_QUEUE_HEAD(nucleus_merge_wait);
 EXPORT_SYMBOL(nucleus_merge_wait);
 
+atomic_t nucleus_process_merge = ATOMIC_INIT(0);
+EXPORT_SYMBOL(nucleus_process_merge);
+
+#define NUCLEUS_MERGER_TIMEOUT 5000 // 5 seconds
+
 static struct task_struct *knucleusmergerd = NULL;
 
 static bool has_merge_requests(void)
 {
-    bool ret = false;
-    unsigned long flags;
-
-    spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
-    ret = !list_empty(&nucleus_merge_queue.request_queue);
-    spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
-
-    return ret;
+    if (atomic_read(&nucleus_process_merge) > 0) {
+        return true;
+    }
+    return false;
 }
 
 static int nucleus_merger(void *data)
@@ -35,12 +36,15 @@ static int nucleus_merger(void *data)
     struct nucleus_merge_request *req, *req_tmp;
     struct nucleus_hugepage *hp;
     struct page *hpage;
-	int target_node;
+	int target_node, ret;
     unsigned long merged = 0;
 
     while (!kthread_should_stop()) {
-        wait_event_interruptible(nucleus_merge_wait, has_merge_requests());
-
+        ret = wait_event_interruptible_timeout(nucleus_merge_wait, has_merge_requests(), msecs_to_jiffies(NUCLEUS_MERGER_TIMEOUT));
+        if (ret == 0) {
+            // pr_info("nucleus_merger: timeout\n");
+            continue;
+        }
 		pr_info("nucleus_merger: processing merge requests\n");
         merged = 0;
 		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
@@ -66,6 +70,7 @@ free_req:
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
 		pr_info("nucleus_merger: processed merge requests, merged %lu pages\n", merged);
+        atomic_set(&nucleus_process_merge, 0);
     }
     return 0;
 }
