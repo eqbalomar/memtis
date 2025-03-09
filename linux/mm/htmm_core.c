@@ -1200,7 +1200,7 @@ static void set_memcg_nr_split(struct mem_cgroup *memcg)
     /* scale down */
     memcg->nr_split *= htmm_gamma;
     memcg->nr_split /= 10;
-	trace_nucleus_split(ehr, rhr, nr_records, memcg->sum_util, memcg->num_util, avg_accesses_hp, memcg->nr_split);
+	trace_nucleus_split_in_memtis(ehr, rhr, nr_records, memcg->sum_util, memcg->num_util, avg_accesses_hp, memcg->nr_split);
 }
 
 /* protected by memcg->access_lock */
@@ -1470,7 +1470,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 		     * and rhr is not improved, stop split huge pages */
 		    if (memcg->split_happen) {
 			if (memcg->prev_dram_sampled < (temp_rhr * htmm_rhr_thres / 100)) { // 3%
-				trace_nucleus_stopsplit(memcg->prev_dram_sampled, temp_rhr);
+				trace_nucleus_stopsplit_in_memtis(memcg->prev_dram_sampled, temp_rhr);
 			    htmm_thres_split = 0;
 			    goto mmap_unlock;
 			}

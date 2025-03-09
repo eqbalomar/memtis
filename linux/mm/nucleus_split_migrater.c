@@ -10,6 +10,8 @@
 #include <linux/khugepaged.h>
 #include <linux/nucleus.h>
 
+#include <trace/events/nucleus.h>
+
 struct deferred_nucleus_request_queue nucleus_split_queue = {
 	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_split_queue.request_queue_lock),
 	.request_queue = LIST_HEAD_INIT(nucleus_split_queue.request_queue),
@@ -116,18 +118,18 @@ static unsigned long split_hugepages(void)
         // pr_info("nucleus_split_migrater: split hp %lx\n", hp->address);
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
         if (!hp->mm) {
-            pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
             goto free_req;
         }
         mmap_read_lock(hp->mm);
         pmd = mm_find_pmd(hp->mm, hp_addr);
         if (!pmd) {
-            pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
         if (!pmd_trans_huge(*pmd)) {
-            pr_info("nucleus_split_migrater: hp %lx not pmd_trans_huge\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx not pmd_trans_huge\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
@@ -135,7 +137,7 @@ static unsigned long split_hugepages(void)
 
         page = pmd_page(*pmd);
         if (!page) {
-            pr_info("nucleus_split_migrater: hp %lx page not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx page not found\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
@@ -145,7 +147,7 @@ static unsigned long split_hugepages(void)
         lruvec = mem_cgroup_page_lruvec(page);
         node_id = page_to_nid(page);
         if (node_id >= NUM_NUMA_NODES) {
-            pr_info("nucleus_split_migrater: hp %lx invalid node id %d\n", hp->address, node_id);
+            // pr_info("nucleus_split_migrater: hp %lx invalid node id %d\n", hp->address, node_id);
             goto free_req;
         }
         if (lruvecs[node_id] == NULL) {
@@ -207,7 +209,7 @@ free_req:
 
     for (i = 0; i < NUM_NUMA_NODES; i++) {
         if (lruvecs[i] && !list_empty(&split_lists[i])) {
-            pr_info("nucleus_split_migrater: putback split pages in node %d lruvec\n", i);
+            // pr_info("nucleus_split_migrater: putback split pages in node %d lruvec\n", i);
             putback_split_pages(&split_lists[i], lruvecs[i]);
         }
     }
@@ -257,14 +259,14 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         }
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
         if (!hp->mm) {
-            pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
             goto free_req;
         }
         mmap_read_lock(hp->mm);
         // pr_info("nucleus_split_migrater: locked mm for hp %lx\n", hp->address);
         pmd = mm_find_pmd(hp->mm, hp_addr);
         if (!pmd) {
-            pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
@@ -274,7 +276,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
             bp_addr = hp_addr + (bp->offset << PAGE_SHIFT);
             pte = pte_offset_map(pmd, bp_addr);
             if (!pte) {
-                pr_info("nucleus_split_migrater: hp %lx bp %u pte not found\n", hp->address, bp->offset);
+                // pr_info("nucleus_split_migrater: hp %lx bp %u pte not found\n", hp->address, bp->offset);
                 pte_unmap(pte);
                 mmap_read_unlock(hp->mm);
                 goto free_req;
@@ -284,7 +286,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
             // pr_info("nucleus_split_migrater: hp %lx bp %u pte unmapped\n", hp->address, bp->offset);
         }
         if (!page) {
-            pr_info("nucleus_split_migrater: hp %lx page not found\n", hp->address);
+            // pr_info("nucleus_split_migrater: hp %lx page not found\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
@@ -296,7 +298,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         lruvec = mem_cgroup_page_lruvec(page);
         node_id = page_to_nid(page);
         if (node_id >= NUM_NUMA_NODES) {
-            pr_info("nucleus_split_migrater: hp %lx invalid node id %d\n", hp->address, node_id);
+            // pr_info("nucleus_split_migrater: hp %lx invalid node id %d\n", hp->address, node_id);
             goto free_req;
         }
         if (lruvecs[node_id] == NULL) {
@@ -371,7 +373,7 @@ free_req:
             if (cur_nr_pages == 0) {
                 cur_nr_pages = get_nr_lru_pages_node(memcg, remote_pgdat);
                 cur_nr_pages += cur_nr_taken[HTMM_CXL_REMOTE_NUMA];
-                pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
+                // pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
                 list_move(&page->lru, &cur_demotion_list);
@@ -386,7 +388,7 @@ free_req:
         if (!list_empty(&cur_demotion_list)) {
             list_splice_tail(&cur_demotion_list, &failed_demotion_list);
         }
-        pr_info("nucleus_split_migrater: nr_to_demote %lu, nr_demoted %lu\n", nr_to_demote, nr_demoted);
+        // pr_info("nucleus_split_migrater: nr_to_demote %lu, nr_demoted %lu\n", nr_to_demote, nr_demoted);
 
         cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &promotion_list, lru) {
@@ -396,7 +398,7 @@ free_req:
             if (cur_nr_pages == 0) {
                 cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
                 cur_nr_pages += cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
-                pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
+                // pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
             if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
                 list_move(&page->lru, &cur_promotion_list);
@@ -411,7 +413,7 @@ free_req:
         if (!list_empty(&cur_promotion_list)) {
             list_splice_tail(&cur_promotion_list, &failed_promotion_list);
         }
-        pr_info("nucleus_split_migrater: nr_to_promote %lu, nr_promoted %lu\n", nr_to_promote, nr_promoted);
+        // pr_info("nucleus_split_migrater: nr_to_promote %lu, nr_promoted %lu\n", nr_to_promote, nr_promoted);
     } while (nr_demoted > 0 || nr_promoted > 0);
 
     list_splice_tail(&failed_demotion_list, &demotion_list);
@@ -439,7 +441,7 @@ free_req:
 
 static int nucleus_split_migrater(void *data)
 {
-    unsigned long split = 0, promoted = 0, demoted = 0;
+    unsigned long split = 0, promoted = 0, demoted = 0, start_tsc, end_tsc, time_ms;
     int ret;
     while (!kthread_should_stop()) {
         ret = wait_event_interruptible_timeout(nucleus_split_migrate_wait, has_split_or_migrate_requests(), msecs_to_jiffies(NUCLEUS_SPLIT_MIGRATER_TIMEOUT));
@@ -449,11 +451,19 @@ static int nucleus_split_migrater(void *data)
         }
 
         pr_info("nucleus_split_migrater: processing split requests\n");
+        start_tsc = rdtscp();
 		split = split_hugepages();
+        end_tsc = rdtscp();
+        time_ms = (end_tsc - start_tsc) / cpu_khz;
+        trace_nucleus_split(split, time_ms);
         pr_info("nucleus_split_migrater: processed split requests, split %lu pages\n", split);
 
         pr_info("nucleus_split_migrater: processing migrate requests\n");
+        start_tsc = rdtscp();
 		migrate_hugepages_and_basepages(&promoted, &demoted);
+        end_tsc = rdtscp();
+        time_ms = (end_tsc - start_tsc) / cpu_khz;
+        trace_nucleus_migrate(promoted, demoted, time_ms);
         pr_info("nucleus_split_migrater: processed migrate requests, promoted %lu pages, demoted %lu pages\n", promoted, demoted);
         atomic_set(&nucleus_process_split_migrate, 0);
     }
@@ -463,7 +473,7 @@ static int nucleus_split_migrater(void *data)
 int nucleus_split_migrater_init(void)
 {
     int err = 0;
-    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);;
+    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);
     pr_info("nucleus_split_migrater: init\n");
     knucleussplitmigraterd = kthread_run(nucleus_split_migrater, NULL, "knucleussplitmigraterd");
     if (IS_ERR(knucleussplitmigraterd)) {

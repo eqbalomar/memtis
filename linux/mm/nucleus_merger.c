@@ -6,6 +6,8 @@
 #include <linux/khugepaged.h>
 #include <linux/nucleus.h>
 
+#include <trace/events/nucleus.h>
+
 struct deferred_nucleus_request_queue nucleus_merge_queue = {
 	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_merge_queue.request_queue_lock),
 	.request_queue = LIST_HEAD_INIT(nucleus_merge_queue.request_queue),
@@ -37,7 +39,7 @@ static int nucleus_merger(void *data)
     struct nucleus_hugepage *hp;
     struct page *hpage;
 	int target_node, ret;
-    unsigned long merged = 0;
+    unsigned long merged = 0, start_tsc, end_tsc, time_ms;
 
     while (!kthread_should_stop()) {
         ret = wait_event_interruptible_timeout(nucleus_merge_wait, has_merge_requests(), msecs_to_jiffies(NUCLEUS_MERGER_TIMEOUT));
@@ -46,6 +48,7 @@ static int nucleus_merger(void *data)
             continue;
         }
 		pr_info("nucleus_merger: processing merge requests\n");
+        start_tsc = rdtscp();
         merged = 0;
 		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
 		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queue.request_queue, list) {
@@ -56,7 +59,7 @@ static int nucleus_merger(void *data)
             hpage = NULL;
             hp_addr = hp->address << HPAGE_PMD_SHIFT;
             if (!hp->mm) {
-                pr_info("nucleus_merger: hp %lx mm not found\n", hp->address);
+                // pr_info("nucleus_merger: hp %lx mm not found\n", hp->address);
                 goto free_req;
             }
             mmap_read_lock(hp->mm);
@@ -69,6 +72,9 @@ free_req:
 			kfree(req);
 		}
 		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
+        end_tsc = rdtscp();
+        time_ms = (end_tsc - start_tsc) / cpu_khz;
+        trace_nucleus_merge(merged, time_ms);
 		pr_info("nucleus_merger: processed merge requests, merged %lu pages\n", merged);
         atomic_set(&nucleus_process_merge, 0);
     }
@@ -78,7 +84,7 @@ free_req:
 int nucleus_merger_init(void)
 {
     int err = 0;
-    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);;
+    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);
     pr_info("nucleus_merger: init\n");
     knucleusmergerd = kthread_run(nucleus_merger, NULL, "knucleusmergerd");
     if (IS_ERR(knucleusmergerd)) {

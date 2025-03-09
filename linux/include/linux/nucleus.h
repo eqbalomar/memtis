@@ -78,6 +78,15 @@ struct nucleus_migrate_request {
 	struct list_head list;
 };
 
+static inline __attribute__((always_inline)) unsigned long rdtscp(void)
+{
+   unsigned long a, d, c;
+
+   __asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
+
+   return (a | (d << 32));
+}
+
 /* nucleus.c */
 
 // void init_nucleus_add_queue(void);
