@@ -1094,7 +1094,7 @@ int collapse_huge_page(struct mm_struct *mm,
 Nucleus algorithm will ensure that hugepages are placed in def tier till memory allows.
 It can temporarily increase beyond the memcg constraint, but other pages will be moved out later.
 */
-#ifndef CONFIG_NUCLEUS
+// #ifndef CONFIG_NUCLEUS
 /* check whether there is enough free space in target memory node */
 	if (node_is_toptier(node)) {
 	    struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
@@ -1118,7 +1118,7 @@ It can temporarily increase beyond the memcg constraint, but other pages will be
 		goto out_nolock;
 	    }
 	}
-#endif
+// #endif
 normal_exec:
 	new_page = khugepaged_alloc_page(hpage, gfp, node);
 #else
