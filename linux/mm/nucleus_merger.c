@@ -63,6 +63,11 @@ static int nucleus_merger(void *data)
                 goto free_req;
             }
             mmap_read_lock(hp->mm);
+            if (atomic_read(&hp->mm->mm_users) == 0) {
+                // pr_info("nucleus_merger: hp %lx mm users 0\n", hp->address);
+                mmap_read_unlock(hp->mm);
+                goto free_req;
+            }
             merged += collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
             // collapse_huge_page will release mm lock
 

@@ -122,6 +122,11 @@ static unsigned long split_hugepages(void)
             goto free_req;
         }
         mmap_read_lock(hp->mm);
+        if (atomic_read(&hp->mm->mm_users) == 0) {
+            // pr_info("nucleus_split_migrater: hp %lx mm users 0\n", hp->address);
+            mmap_read_unlock(hp->mm);
+            goto free_req;
+        }
         pmd = mm_find_pmd(hp->mm, hp_addr);
         if (!pmd) {
             // pr_info("nucleus_split_migrater: hp %lx pmd not found\n", hp->address);
@@ -263,6 +268,11 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
             goto free_req;
         }
         mmap_read_lock(hp->mm);
+        if (atomic_read(&hp->mm->mm_users) == 0) {
+            // pr_info("nucleus_split_migrater: hp %lx mm users 0\n", hp->address);
+            mmap_read_unlock(hp->mm);
+            goto free_req;
+        }
         // pr_info("nucleus_split_migrater: locked mm for hp %lx\n", hp->address);
         pmd = mm_find_pmd(hp->mm, hp_addr);
         if (!pmd) {
