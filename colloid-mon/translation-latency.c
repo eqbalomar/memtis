@@ -39,7 +39,10 @@ u64 smoothed_walk_completed;
 // u64 loads_remote;
 // u64 smoothed_loads_remote;
 
-extern u64 nucleus_llc_misses;
+extern u64 nucleus_local_llc_misses;
+extern u64 nucleus_remote_llc_misses;
+u64 smoothed_local_llc_misses;
+u64 smoothed_remote_llc_misses;
 u64 smoothed_llc_misses;
 
 extern int terminate_mon;
@@ -146,8 +149,11 @@ void thread_fun_poll_perf(struct work_struct *work) {
         // WRITE_ONCE(smoothed_loads_remote, (loads_remote + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote)>>EWMA_EXP_PERF);
         // prev_loads_remote = curr_loads_remote;
 
-        curr_llc_misses = READ_ONCE(nucleus_llc_misses);
-        WRITE_ONCE(smoothed_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_llc_misses)>>EWMA_EXP_PERF);
+        curr_llc_misses = READ_ONCE(nucleus_local_llc_misses);
+        WRITE_ONCE(smoothed_local_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_local_llc_misses)>>EWMA_EXP_PERF);
+        curr_llc_misses = READ_ONCE(nucleus_remote_llc_misses);
+        WRITE_ONCE(smoothed_remote_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_remote_llc_misses)>>EWMA_EXP_PERF);
+        WRITE_ONCE(smoothed_llc_misses, smoothed_local_llc_misses + smoothed_remote_llc_misses);
 
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;
