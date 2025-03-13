@@ -1362,8 +1362,10 @@ again:
 				    likely(!(vma->vm_flags & VM_SEQ_READ)))
 					mark_page_accessed(page);
 			}
+#ifndef CONFIG_NUCLEUS
 #ifdef CONFIG_HTMM
 			uncharge_htmm_pte(pte, get_mem_cgroup_from_mm(vma->vm_mm));
+#endif
 #endif
 			rss[mm_counter(page)]--;
 			page_remove_rmap(page, false);

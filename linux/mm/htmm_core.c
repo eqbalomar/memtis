@@ -25,9 +25,6 @@
 #include "internal.h"
 #include <asm/pgtable.h>
 
-unsigned long nucleus_all_loads = 0;
-EXPORT_SYMBOL(nucleus_all_loads);
-
 unsigned long nucleus_loads_local = 0;
 EXPORT_SYMBOL(nucleus_loads_local);
 
@@ -1230,6 +1227,8 @@ static bool __cooling(struct mm_struct *mm,
 	    spin_lock(&memcg->access_lock);
 	    WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
 	    spin_unlock(&memcg->access_lock);
+		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
+		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
 	    return false;
 	}
     }
@@ -1238,6 +1237,8 @@ static bool __cooling(struct mm_struct *mm,
 
     reset_memcg_stat(memcg); 
     WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
+	WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
+	WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
     memcg->bp_active_threshold--;
     memcg->cooled = true;
     smp_mb();
@@ -1385,17 +1386,13 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
     memcg = get_mem_cgroup_from_mm(mm);
     if (!memcg || !memcg->htmm_enabled)
 	goto mmap_unlock;
-
-	if (event == DRAMREAD || event == CXLREAD || event == NVMREAD) {
-		if (event == DRAMREAD) {
-			WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + get_sample_period(sample_period));
-		} else if (event == CXLREAD || event == NVMREAD) {
-			WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + get_sample_period(sample_period));
-		}
-		WRITE_ONCE(nucleus_all_loads, READ_ONCE(nucleus_all_loads) + get_sample_period(sample_period));
-	}
-
+	
 #ifdef CONFIG_NUCLEUS
+	if (event == DRAMREAD) {
+		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + 1);
+	} else if (event == CXLREAD || event == NVMREAD) {
+		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + 1);
+	}
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
 	if (event == DRAMREAD) {
