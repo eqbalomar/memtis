@@ -1372,12 +1372,8 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	goto put_task;
     }
 
-#ifdef CONFIG_NUCLEUS
-	mmap_read_lock(mm);
-#else
     if (!mmap_read_trylock(mm))
 	goto put_task;
-#endif
 
     vma = find_vma(mm, address);
     if (unlikely(!vma))
