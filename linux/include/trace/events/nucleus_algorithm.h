@@ -44,6 +44,22 @@ TRACE_EVENT(nucleus_algorithm,
       __entry->init_time_ms, __entry->pack_bp_time_ms, __entry->sort_hp_time_ms, __entry->process_hp_time_ms, __entry->enqueue_req_time_ms, __entry->cleanup_time_ms)
 );
 
+TRACE_EVENT(nucleus_access_freqs,
+   TP_PROTO(unsigned long *hp_index, unsigned long *hp_freq),
+   TP_ARGS(hp_index, hp_freq),
+   TP_STRUCT__entry(
+      __array(unsigned long, hp_index, 8)
+      __array(unsigned long, hp_freq, 8)
+   ),
+   TP_fast_assign(
+      memcpy(__entry->hp_index, hp_index, sizeof(unsigned long) * 8);
+      memcpy(__entry->hp_freq, hp_freq, sizeof(unsigned long) * 8);
+   ),
+   TP_printk("[nucleus_algorithm] hp_index=%s hp_freq=%s",
+      __print_array(__entry->hp_index, 8, sizeof(unsigned long)),
+      __print_array(__entry->hp_freq, 8, sizeof(unsigned long)))
+);
+
 #endif /* _TRACE_NUCLEUS_ALGORITHM_H */
 
 /* This part must be outside protection */

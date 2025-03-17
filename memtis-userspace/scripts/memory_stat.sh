@@ -2,6 +2,10 @@
 
 TARGET=$1
 
+rm -f ${TARGET}/memory_stat.txt
+rm -f ${TARGET}/hotness_stat.txt
+rm -f ${TARGET}/pgmig.txt
+
 while :
 do
     cat /sys/fs/cgroup/htmm/memory.stat | grep -e anon_thp -e anon >> ${TARGET}/memory_stat.txt
