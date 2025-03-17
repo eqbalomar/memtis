@@ -21,13 +21,13 @@ static u64 event_val_total[N_NUCLEUS_EVENTS];
 static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
 
-u64 walk_completed_hp;
-u64 smoothed_walk_completed_hp;
+// u64 walk_completed_hp;
+// u64 smoothed_walk_completed_hp;
 
-u64 walk_completed_bp;
-u64 smoothed_walk_completed_bp;
+// u64 walk_completed_bp;
+// u64 smoothed_walk_completed_bp;
 
-// u64 walk_completed;
+u64 walk_completed;
 u64 smoothed_walk_completed;
 
 // u64 prev_loads;
@@ -64,12 +64,12 @@ static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 
 static unsigned long get_perf_event_config(enum nucleus_events e) {
     switch (e) {
-        // case WALK_COMPLETED_EVENT:
-        //     return WALK_COMPLETED;
-        case WALK_COMPLETED_EVENT_HP:
-            return WALK_COMPLETED_HP;
-        case WALK_COMPLETED_EVENT_BP:
-            return WALK_COMPLETED_BP;
+        case WALK_COMPLETED_EVENT:
+            return WALK_COMPLETED;
+        // case WALK_COMPLETED_EVENT_HP:
+        //     return WALK_COMPLETED_HP;
+        // case WALK_COMPLETED_EVENT_BP:
+        //     return WALK_COMPLETED_BP;
         default:
             return N_NUCLEUS_EVENTS;
     }
@@ -176,20 +176,20 @@ void thread_fun_poll_perf(struct work_struct *work) {
                 event_val_prev[event][core] = event_val_curr[event][core];
             }
             // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
-            // if (event == WALK_COMPLETED_EVENT) {
-            //     WRITE_ONCE(walk_completed, event_val_total[event]);
-            // }
-            if (event == WALK_COMPLETED_EVENT_HP) {
-                WRITE_ONCE(walk_completed_hp, event_val_total[event]);
-            } else if (event == WALK_COMPLETED_EVENT_BP) {
-                WRITE_ONCE(walk_completed_bp, event_val_total[event]);
+            if (event == WALK_COMPLETED_EVENT) {
+                WRITE_ONCE(walk_completed, event_val_total[event]);
             }
+            // if (event == WALK_COMPLETED_EVENT_HP) {
+            //     WRITE_ONCE(walk_completed_hp, event_val_total[event]);
+            // } else if (event == WALK_COMPLETED_EVENT_BP) {
+            //     WRITE_ONCE(walk_completed_bp, event_val_total[event]);
+            // }
         }
 
-        // WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed)>>EWMA_EXP_PERF);
-        WRITE_ONCE(smoothed_walk_completed_hp, (walk_completed_hp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_hp)>>EWMA_EXP_PERF);
-        WRITE_ONCE(smoothed_walk_completed_bp, (walk_completed_bp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_bp)>>EWMA_EXP_PERF);
-        WRITE_ONCE(smoothed_walk_completed, smoothed_walk_completed_hp + smoothed_walk_completed_bp);
+        WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed)>>EWMA_EXP_PERF);
+        // WRITE_ONCE(smoothed_walk_completed_hp, (walk_completed_hp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_hp)>>EWMA_EXP_PERF);
+        // WRITE_ONCE(smoothed_walk_completed_bp, (walk_completed_bp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_bp)>>EWMA_EXP_PERF);
+        // WRITE_ONCE(smoothed_walk_completed, smoothed_walk_completed_hp + smoothed_walk_completed_bp);
 
         t_lat_hp = 3 * smoothed_lat_local;
         if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
