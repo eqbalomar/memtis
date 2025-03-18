@@ -65,9 +65,9 @@ static int __perf_event_open(__u64 config, __u64 config1, __u64 cpu,
     attr.config = config;
     attr.config1 = config1;
     if (config == ALL_STORES)
-	attr.sample_period = htmm_inst_sample_period;
+	attr.sample_period = READ_ONCE(htmm_inst_sample_period);
     else
-	attr.sample_period = get_sample_period(0);
+	attr.sample_period = READ_ONCE(htmm_sample_period); // get_sample_period(0);
     attr.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_TID | PERF_SAMPLE_ADDR;
     attr.disabled = 0;
     attr.exclude_kernel = 1;
@@ -218,7 +218,8 @@ static int ksamplingd(void *data)
     /* used for periodic checks*/
     unsigned long cpucap_period = msecs_to_jiffies(15000); // 15s
     unsigned long sample_period = 0;
-	WRITE_ONCE(current_sample_period, get_sample_period(sample_period));
+	// WRITE_ONCE(current_sample_period, get_sample_period(sample_period));
+	WRITE_ONCE(current_sample_period, READ_ONCE(htmm_sample_period));
     unsigned long sample_inst_period = 0;
     /* report cpu/period stat */
     unsigned long trace_cputime, trace_period = msecs_to_jiffies(1500); // 3s
@@ -345,12 +346,13 @@ static int ksamplingd(void *data)
 		} while (cond);
 	    }
 	}
-	/* if ksampled_soft_cpu_quota is zero, disable dynamic pebs feature */
-	if (!ksampled_soft_cpu_quota)
-	    continue;
 
 	/* sleep */
 	schedule_timeout_interruptible(sleep_timeout);
+
+	/* if ksampled_soft_cpu_quota is zero, disable dynamic pebs feature */
+	if (!ksampled_soft_cpu_quota)
+	    continue;
 
 	/* check elasped time */
 	cur = jiffies;

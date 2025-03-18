@@ -190,7 +190,7 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 		return;
 	}
 
-	perform_cooling(memcg, hp);
+	// perform_cooling(memcg, hp);
 
 	bp = &hp->bp_list[bp_offset];
 	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + 1);
