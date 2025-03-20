@@ -1,0 +1,516 @@
+[47462.070962] nucleus_merger: init
+[47462.071383] nucleus_split_migrater: init
+[47464.763307] run_bench.sh (44221): drop_caches: 3
+[47466.795876] pebs_init
+[47467.773849] perf: interrupt took too long (58926 > 2500), lowering kernel.perf_event_max_sample_rate to 3250
+[47469.716748] nucleus_algorithm: hp_count 0, def_tier_size 15938355
+[47469.717093] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 0, nr_to_promote: 0, nr_to_demote: 0
+[47473.200837] total_accesses: 1 max_dram_hits: 0 cur_hits: 1 
+[47480.113819] nucleus_algorithm: set vma to 00000000b84baa29
+[47480.185029] nucleus_algorithm: hp_count 58139, def_tier_size 15938355
+[47483.424806] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 2, nr_to_promote: 5004800, nr_to_demote: 5298688
+[47483.424819] nucleus_merger: processing merge requests
+[47483.424920] nucleus_split_migrater: processing split requests
+[47483.424930] nucleus_split_migrater: processed split requests, split 0 pages
+[47483.424934] nucleus_split_migrater: processing migrate requests
+[47483.425560] nucleus_merger: processed merge requests, merged 0 pages
+[47493.524797] nucleus_algorithm: split/migrate requests still being processed
+[47495.551827] nucleus_split_migrater: processed migrate requests, promoted 4460032 pages, demoted 5298688 pages
+[47503.988363] nucleus_algorithm: hp_count 65539, def_tier_size 15938355
+[47508.149959] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 3, nr_to_promote: 10443776, nr_to_demote: 10443264
+[47508.149976] nucleus_split_migrater: processing split requests
+[47508.149988] nucleus_split_migrater: processed split requests, split 0 pages
+[47508.149991] nucleus_split_migrater: processing migrate requests
+[47508.150072] nucleus_merger: processing merge requests
+[47508.151199] nucleus_merger: processed merge requests, merged 0 pages
+[47518.356851] nucleus_algorithm: split/migrate requests still being processed
+[47528.596867] nucleus_algorithm: split/migrate requests still being processed
+[47534.082148] nucleus_split_migrater: processed migrate requests, promoted 10443264 pages, demoted 10443264 pages
+[47539.053738] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47543.235913] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 11272704, nr_to_demote: 11272192
+[47543.236021] nucleus_merger: processing merge requests
+[47543.236087] nucleus_split_migrater: processing split requests
+[47543.236125] nucleus_split_migrater: processed split requests, split 0 pages
+[47543.236130] nucleus_split_migrater: processing migrate requests
+[47543.237915] nucleus_merger: processed merge requests, merged 0 pages
+[47553.428919] nucleus_algorithm: split/migrate requests still being processed
+[47563.668934] nucleus_algorithm: split/migrate requests still being processed
+[47569.578481] nucleus_split_migrater: processed migrate requests, promoted 10684928 pages, demoted 10684928 pages
+[47574.131311] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47578.486829] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 12981760, nr_to_demote: 12981248
+[47578.486852] nucleus_merger: processing merge requests
+[47578.486955] nucleus_split_migrater: processing split requests
+[47578.486995] nucleus_split_migrater: processed split requests, split 0 pages
+[47578.486999] nucleus_split_migrater: processing migrate requests
+[47578.488749] nucleus_merger: processed merge requests, merged 0 pages
+[47588.500987] nucleus_algorithm: split/migrate requests still being processed
+[47598.741002] nucleus_algorithm: split/migrate requests still being processed
+[47605.018624] nucleus_split_migrater: processed migrate requests, promoted 10723840 pages, demoted 10723840 pages
+[47609.201909] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47613.530300] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 9854464, nr_to_demote: 9853952
+[47613.530408] nucleus_merger: processing merge requests
+[47613.530469] nucleus_split_migrater: processing split requests
+[47613.530505] nucleus_split_migrater: processed split requests, split 0 pages
+[47613.530508] nucleus_split_migrater: processing migrate requests
+[47613.532297] nucleus_merger: processed merge requests, merged 0 pages
+[47623.573053] nucleus_algorithm: split/migrate requests still being processed
+[47633.813068] nucleus_algorithm: split/migrate requests still being processed
+[47637.897345] nucleus_split_migrater: processed migrate requests, promoted 9853952 pages, demoted 9853952 pages
+[47644.273302] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47648.591018] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 8372736, nr_to_demote: 8372224
+[47648.591032] nucleus_merger: processing merge requests
+[47648.591132] nucleus_split_migrater: processing split requests
+[47648.591142] nucleus_split_migrater: processed split requests, split 0 pages
+[47648.591146] nucleus_split_migrater: processing migrate requests
+[47648.592937] nucleus_merger: processed merge requests, merged 0 pages
+[47658.645117] nucleus_algorithm: split/migrate requests still being processed
+[47668.885131] nucleus_algorithm: split/migrate requests still being processed
+[47669.222701] nucleus_split_migrater: processed migrate requests, promoted 8372224 pages, demoted 8372224 pages
+[47679.347183] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47683.690146] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 7121920, nr_to_demote: 7121408
+[47683.690161] nucleus_merger: processing merge requests
+[47683.690260] nucleus_split_migrater: processing split requests
+[47683.690270] nucleus_split_migrater: processed split requests, split 0 pages
+[47683.690274] nucleus_split_migrater: processing migrate requests
+[47683.692040] nucleus_merger: processed merge requests, merged 0 pages
+[47693.717202] nucleus_algorithm: split/migrate requests still being processed
+[47701.185496] nucleus_split_migrater: processed migrate requests, promoted 7121408 pages, demoted 7121408 pages
+[47704.178139] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47708.513470] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 7495168, nr_to_demote: 7494656
+[47708.513487] nucleus_merger: processing merge requests
+[47708.513589] nucleus_split_migrater: processing split requests
+[47708.513599] nucleus_split_migrater: processed split requests, split 0 pages
+[47708.513603] nucleus_split_migrater: processing migrate requests
+[47708.515355] nucleus_merger: processed merge requests, merged 0 pages
+[47718.549251] nucleus_algorithm: split/migrate requests still being processed
+[47726.880638] nucleus_split_migrater: processed migrate requests, promoted 7494656 pages, demoted 7494656 pages
+[47729.010462] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47733.420127] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 7229952, nr_to_demote: 7229440
+[47733.420250] nucleus_merger: processing merge requests
+[47733.420310] nucleus_split_migrater: processing split requests
+[47733.420347] nucleus_split_migrater: processed split requests, split 0 pages
+[47733.420351] nucleus_split_migrater: processing migrate requests
+[47733.422161] nucleus_merger: processed merge requests, merged 0 pages
+[47743.637265] nucleus_algorithm: split/migrate requests still being processed
+[47751.116118] nucleus_split_migrater: processed migrate requests, promoted 7229440 pages, demoted 7229440 pages
+[47754.098616] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47758.405694] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 5999104, nr_to_demote: 5998592
+[47758.405710] nucleus_merger: processing merge requests
+[47758.405813] nucleus_split_migrater: processing split requests
+[47758.405823] nucleus_split_migrater: processed split requests, split 0 pages
+[47758.405827] nucleus_split_migrater: processing migrate requests
+[47758.407566] nucleus_merger: processed merge requests, merged 0 pages
+[47768.469331] nucleus_algorithm: split/migrate requests still being processed
+[47773.046199] nucleus_split_migrater: processed migrate requests, promoted 5998592 pages, demoted 5998592 pages
+[47778.930252] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47783.208319] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 5149184, nr_to_demote: 5148672
+[47783.208434] nucleus_merger: processing merge requests
+[47783.208487] nucleus_split_migrater: processing split requests
+[47783.208522] nucleus_split_migrater: processed split requests, split 0 pages
+[47783.208526] nucleus_split_migrater: processing migrate requests
+[47783.210318] nucleus_merger: processed merge requests, merged 0 pages
+[47793.301350] nucleus_algorithm: split/migrate requests still being processed
+[47795.775094] nucleus_split_migrater: processed migrate requests, promoted 5148672 pages, demoted 5148672 pages
+[47803.762463] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47808.064637] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 5377024, nr_to_demote: 5376512
+[47808.064655] nucleus_merger: processing merge requests
+[47808.064753] nucleus_split_migrater: processing split requests
+[47808.064763] nucleus_split_migrater: processed split requests, split 0 pages
+[47808.064767] nucleus_split_migrater: processing migrate requests
+[47808.066537] nucleus_merger: processed merge requests, merged 0 pages
+[47818.133410] nucleus_algorithm: split/migrate requests still being processed
+[47821.200243] nucleus_split_migrater: processed migrate requests, promoted 5376512 pages, demoted 5376512 pages
+[47828.594933] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47832.900465] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 5243904, nr_to_demote: 5243392
+[47832.900577] nucleus_merger: processing merge requests
+[47832.900629] nucleus_split_migrater: processing split requests
+[47832.900667] nucleus_split_migrater: processed split requests, split 0 pages
+[47832.900670] nucleus_split_migrater: processing migrate requests
+[47832.902512] nucleus_merger: processed merge requests, merged 0 pages
+[47842.965431] nucleus_algorithm: split/migrate requests still being processed
+[47845.692182] nucleus_split_migrater: processed migrate requests, promoted 5243392 pages, demoted 5243392 pages
+[47853.427209] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47857.730206] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 4674560, nr_to_demote: 4674048
+[47857.730317] nucleus_merger: processing merge requests
+[47857.730379] nucleus_split_migrater: processing split requests
+[47857.730416] nucleus_split_migrater: processed split requests, split 0 pages
+[47857.730420] nucleus_split_migrater: processing migrate requests
+[47857.732254] nucleus_merger: processed merge requests, merged 0 pages
+[47867.797490] nucleus_algorithm: split/migrate requests still being processed
+[47869.136411] nucleus_split_migrater: processed migrate requests, promoted 4674048 pages, demoted 4674048 pages
+[47878.259910] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47882.557529] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 4296192, nr_to_demote: 4295680
+[47882.557637] nucleus_merger: processing merge requests
+[47882.557698] nucleus_split_migrater: processing split requests
+[47882.557734] nucleus_split_migrater: processed split requests, split 0 pages
+[47882.557738] nucleus_split_migrater: processing migrate requests
+[47882.559523] nucleus_merger: processed merge requests, merged 0 pages
+[47892.629508] nucleus_algorithm: split/migrate requests still being processed
+[47893.009316] nucleus_split_migrater: processed migrate requests, promoted 4295680 pages, demoted 4295680 pages
+[47903.091118] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47907.395342] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3933184, nr_to_demote: 3932672
+[47907.395454] nucleus_merger: processing merge requests
+[47907.395532] nucleus_split_migrater: processing split requests
+[47907.395567] nucleus_split_migrater: processed split requests, split 0 pages
+[47907.395572] nucleus_split_migrater: processing migrate requests
+[47907.397339] nucleus_merger: processed merge requests, merged 0 pages
+[47916.969931] nucleus_split_migrater: processed migrate requests, promoted 3932672 pages, demoted 3932672 pages
+[47917.685126] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47921.973873] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2848768, nr_to_demote: 2848256
+[47921.973906] nucleus_split_migrater: processing split requests
+[47921.973917] nucleus_split_migrater: processed split requests, split 0 pages
+[47921.973921] nucleus_split_migrater: processing migrate requests
+[47921.973980] nucleus_merger: processing merge requests
+[47921.975866] nucleus_merger: processed merge requests, merged 0 pages
+[47928.882456] nucleus_split_migrater: processed migrate requests, promoted 2848256 pages, demoted 2848256 pages
+[47932.266936] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47936.476642] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2540544, nr_to_demote: 2540032
+[47936.476751] nucleus_merger: processing merge requests
+[47936.476816] nucleus_split_migrater: processing split requests
+[47936.476853] nucleus_split_migrater: processed split requests, split 0 pages
+[47936.476857] nucleus_split_migrater: processing migrate requests
+[47936.478655] nucleus_merger: processed merge requests, merged 0 pages
+[47942.652081] nucleus_split_migrater: processed migrate requests, promoted 2540032 pages, demoted 2540032 pages
+[47946.867476] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47951.164579] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3266048, nr_to_demote: 3265536
+[47951.164690] nucleus_merger: processing merge requests
+[47951.164754] nucleus_split_migrater: processing split requests
+[47951.164787] nucleus_split_migrater: processed split requests, split 0 pages
+[47951.164791] nucleus_split_migrater: processing migrate requests
+[47951.166583] nucleus_merger: processed merge requests, merged 0 pages
+[47959.114416] nucleus_split_migrater: processed migrate requests, promoted 3265536 pages, demoted 3265536 pages
+[47961.451431] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47965.656334] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3539456, nr_to_demote: 3538944
+[47965.656442] nucleus_merger: processing merge requests
+[47965.656516] nucleus_split_migrater: processing split requests
+[47965.656553] nucleus_split_migrater: processed split requests, split 0 pages
+[47965.656557] nucleus_split_migrater: processing migrate requests
+[47965.658337] nucleus_merger: processed merge requests, merged 0 pages
+[47974.248571] nucleus_split_migrater: processed migrate requests, promoted 3538944 pages, demoted 3538944 pages
+[47976.052050] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47980.317006] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2408448, nr_to_demote: 2407936
+[47980.317121] nucleus_merger: processing merge requests
+[47980.317168] nucleus_split_migrater: processing split requests
+[47980.317205] nucleus_split_migrater: processed split requests, split 0 pages
+[47980.317209] nucleus_split_migrater: processing migrate requests
+[47980.319009] nucleus_merger: processed merge requests, merged 0 pages
+[47986.169878] nucleus_split_migrater: processed migrate requests, promoted 2407936 pages, demoted 2407936 pages
+[47990.635579] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[47994.862091] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3149824, nr_to_demote: 3149312
+[47994.862110] nucleus_merger: processing merge requests
+[47994.862209] nucleus_split_migrater: processing split requests
+[47994.862248] nucleus_split_migrater: processed split requests, split 0 pages
+[47994.862252] nucleus_split_migrater: processing migrate requests
+[47994.863968] nucleus_merger: processed merge requests, merged 0 pages
+[48002.545145] nucleus_split_migrater: processed migrate requests, promoted 3149312 pages, demoted 3149312 pages
+[48005.236542] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48009.557277] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2999296, nr_to_demote: 2998784
+[48009.557398] nucleus_merger: processing merge requests
+[48009.557448] nucleus_split_migrater: processing split requests
+[48009.557484] nucleus_split_migrater: processed split requests, split 0 pages
+[48009.557488] nucleus_split_migrater: processing migrate requests
+[48009.559291] nucleus_merger: processed merge requests, merged 0 pages
+[48016.842604] nucleus_split_migrater: processed migrate requests, promoted 2998784 pages, demoted 2998784 pages
+[48019.828824] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48024.128240] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2701824, nr_to_demote: 2701312
+[48024.128355] nucleus_merger: processing merge requests
+[48024.128400] nucleus_split_migrater: processing split requests
+[48024.128435] nucleus_split_migrater: processed split requests, split 0 pages
+[48024.128439] nucleus_split_migrater: processing migrate requests
+[48024.130268] nucleus_merger: processed merge requests, merged 0 pages
+[48030.689781] nucleus_split_migrater: processed migrate requests, promoted 2701312 pages, demoted 2701312 pages
+[48034.413429] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48038.652604] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2675712, nr_to_demote: 2675200
+[48038.652732] nucleus_merger: processing merge requests
+[48038.652794] nucleus_split_migrater: processing split requests
+[48038.652829] nucleus_split_migrater: processed split requests, split 0 pages
+[48038.652833] nucleus_split_migrater: processing migrate requests
+[48038.654625] nucleus_merger: processed merge requests, merged 0 pages
+[48045.185019] nucleus_split_migrater: processed migrate requests, promoted 2675200 pages, demoted 2675200 pages
+[48049.013435] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48053.343413] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3417088, nr_to_demote: 3416576
+[48053.343530] nucleus_merger: processing merge requests
+[48053.343578] nucleus_split_migrater: processing split requests
+[48053.343615] nucleus_split_migrater: processed split requests, split 0 pages
+[48053.343619] nucleus_split_migrater: processing migrate requests
+[48053.345418] nucleus_merger: processed merge requests, merged 0 pages
+[48061.668665] nucleus_split_migrater: processed migrate requests, promoted 3416576 pages, demoted 3416576 pages
+[48063.596790] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48067.844787] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2652160, nr_to_demote: 2651648
+[48067.844907] nucleus_merger: processing merge requests
+[48067.844954] nucleus_split_migrater: processing split requests
+[48067.844991] nucleus_split_migrater: processed split requests, split 0 pages
+[48067.844995] nucleus_split_migrater: processing migrate requests
+[48067.846808] nucleus_merger: processed merge requests, merged 0 pages
+[48074.280749] nucleus_split_migrater: processed migrate requests, promoted 2651648 pages, demoted 2651648 pages
+[48078.199590] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48082.524468] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2514432, nr_to_demote: 2513920
+[48082.524581] nucleus_merger: processing merge requests
+[48082.524628] nucleus_split_migrater: processing split requests
+[48082.524662] nucleus_split_migrater: processed split requests, split 0 pages
+[48082.524666] nucleus_split_migrater: processing migrate requests
+[48082.526478] nucleus_merger: processed merge requests, merged 0 pages
+[48088.663842] nucleus_split_migrater: processed migrate requests, promoted 2513920 pages, demoted 2513920 pages
+[48092.781607] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48097.043393] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3408896, nr_to_demote: 3408384
+[48097.043507] nucleus_merger: processing merge requests
+[48097.043552] nucleus_split_migrater: processing split requests
+[48097.043586] nucleus_split_migrater: processed split requests, split 0 pages
+[48097.043590] nucleus_split_migrater: processing migrate requests
+[48097.045390] nucleus_merger: processed merge requests, merged 0 pages
+[48105.345485] nucleus_split_migrater: processed migrate requests, promoted 3408384 pages, demoted 3408384 pages
+[48107.379448] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48111.721612] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2670592, nr_to_demote: 2670080
+[48111.721733] nucleus_merger: processing merge requests
+[48111.721782] nucleus_split_migrater: processing split requests
+[48111.721833] nucleus_split_migrater: processed split requests, split 0 pages
+[48111.721837] nucleus_split_migrater: processing migrate requests
+[48111.723624] nucleus_merger: processed merge requests, merged 0 pages
+[48118.205743] nucleus_split_migrater: processed migrate requests, promoted 2670080 pages, demoted 2670080 pages
+[48121.973579] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48126.321973] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2512896, nr_to_demote: 2512384
+[48126.322091] nucleus_split_migrater: processing split requests
+[48126.322098] nucleus_merger: processing merge requests
+[48126.322129] nucleus_split_migrater: processed split requests, split 0 pages
+[48126.322133] nucleus_split_migrater: processing migrate requests
+[48126.323985] nucleus_merger: processed merge requests, merged 0 pages
+[48132.457709] nucleus_split_migrater: processed migrate requests, promoted 2512384 pages, demoted 2512384 pages
+[48136.565836] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48140.911411] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3513344, nr_to_demote: 3512832
+[48140.911531] nucleus_merger: processing merge requests
+[48140.911578] nucleus_split_migrater: processing split requests
+[48140.911613] nucleus_split_migrater: processed split requests, split 0 pages
+[48140.911617] nucleus_split_migrater: processing migrate requests
+[48140.913414] nucleus_merger: processed merge requests, merged 0 pages
+[48149.470182] nucleus_split_migrater: processed migrate requests, promoted 3512832 pages, demoted 3512832 pages
+[48151.157825] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48155.470846] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2913792, nr_to_demote: 2913280
+[48155.470973] nucleus_split_migrater: processing split requests
+[48155.470981] nucleus_merger: processing merge requests
+[48155.471012] nucleus_split_migrater: processed split requests, split 0 pages
+[48155.471016] nucleus_split_migrater: processing migrate requests
+[48155.472866] nucleus_merger: processed merge requests, merged 0 pages
+[48162.547661] nucleus_split_migrater: processed migrate requests, promoted 2913280 pages, demoted 2913280 pages
+[48165.740553] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48169.964067] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2873344, nr_to_demote: 2872832
+[48169.964195] nucleus_merger: processing merge requests
+[48169.964253] nucleus_split_migrater: processing split requests
+[48169.964288] nucleus_split_migrater: processed split requests, split 0 pages
+[48169.964292] nucleus_split_migrater: processing migrate requests
+[48169.966103] nucleus_merger: processed merge requests, merged 0 pages
+[48176.963622] nucleus_split_migrater: processed migrate requests, promoted 2872832 pages, demoted 2872832 pages
+[48180.342369] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48184.661197] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3265024, nr_to_demote: 3264512
+[48184.661215] nucleus_merger: processing merge requests
+[48184.661313] nucleus_split_migrater: processing split requests
+[48184.661348] nucleus_split_migrater: processed split requests, split 0 pages
+[48184.661352] nucleus_split_migrater: processing migrate requests
+[48184.663085] nucleus_merger: processed merge requests, merged 0 pages
+[48192.622039] nucleus_split_migrater: processed migrate requests, promoted 3264512 pages, demoted 3264512 pages
+[48194.924606] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48199.186856] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3215360, nr_to_demote: 3214848
+[48199.186873] nucleus_merger: processing merge requests
+[48199.186966] nucleus_split_migrater: processing split requests
+[48199.186976] nucleus_split_migrater: processed split requests, split 0 pages
+[48199.186980] nucleus_split_migrater: processing migrate requests
+[48199.188730] nucleus_merger: processed merge requests, merged 0 pages
+[48206.998362] nucleus_split_migrater: processed migrate requests, promoted 3214848 pages, demoted 3214848 pages
+[48209.524464] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48213.810004] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2440704, nr_to_demote: 2440192
+[48213.810117] nucleus_merger: processing merge requests
+[48213.810175] nucleus_split_migrater: processing split requests
+[48213.810214] nucleus_split_migrater: processed split requests, split 0 pages
+[48213.810218] nucleus_split_migrater: processing migrate requests
+[48213.811996] nucleus_merger: processed merge requests, merged 0 pages
+[48219.750270] nucleus_split_migrater: processed migrate requests, promoted 2440192 pages, demoted 2440192 pages
+[48224.114758] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48228.384254] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3394560, nr_to_demote: 3394048
+[48228.384271] nucleus_merger: processing merge requests
+[48228.384364] nucleus_split_migrater: processing split requests
+[48228.384373] nucleus_split_migrater: processed split requests, split 0 pages
+[48228.384377] nucleus_split_migrater: processing migrate requests
+[48228.386149] nucleus_merger: processed merge requests, merged 0 pages
+[48236.657660] nucleus_split_migrater: processed migrate requests, promoted 3394048 pages, demoted 3394048 pages
+[48238.699717] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48242.895267] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2962944, nr_to_demote: 2962432
+[48242.895387] nucleus_merger: processing merge requests
+[48242.895451] nucleus_split_migrater: processing split requests
+[48242.895490] nucleus_split_migrater: processed split requests, split 0 pages
+[48242.895494] nucleus_split_migrater: processing migrate requests
+[48242.897258] nucleus_merger: processed merge requests, merged 0 pages
+[48250.093023] nucleus_split_migrater: processed migrate requests, promoted 2962432 pages, demoted 2962432 pages
+[48253.291316] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48257.480214] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2543104, nr_to_demote: 2542592
+[48257.480231] nucleus_merger: processing merge requests
+[48257.480329] nucleus_split_migrater: processing split requests
+[48257.480339] nucleus_split_migrater: processed split requests, split 0 pages
+[48257.480343] nucleus_split_migrater: processing migrate requests
+[48257.482102] nucleus_merger: processed merge requests, merged 0 pages
+[48263.659382] nucleus_split_migrater: processed migrate requests, promoted 2542592 pages, demoted 2542592 pages
+[48267.882822] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48272.073579] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3008512, nr_to_demote: 3008000
+[48272.073594] nucleus_split_migrater: processing split requests
+[48272.073596] nucleus_merger: processing merge requests
+[48272.073605] nucleus_split_migrater: processed split requests, split 0 pages
+[48272.073609] nucleus_split_migrater: processing migrate requests
+[48272.075460] nucleus_merger: processed merge requests, merged 0 pages
+[48279.413738] nucleus_split_migrater: processed migrate requests, promoted 3008000 pages, demoted 3008000 pages
+[48282.475012] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48286.673521] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3100672, nr_to_demote: 3100160
+[48286.673536] nucleus_merger: processing merge requests
+[48286.673634] nucleus_split_migrater: processing split requests
+[48286.673644] nucleus_split_migrater: processed split requests, split 0 pages
+[48286.673648] nucleus_split_migrater: processing migrate requests
+[48286.675432] nucleus_merger: processed merge requests, merged 0 pages
+[48294.207521] nucleus_split_migrater: processed migrate requests, promoted 3100160 pages, demoted 3100160 pages
+[48297.067555] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48301.251158] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2880512, nr_to_demote: 2880000
+[48301.251170] nucleus_merger: processing merge requests
+[48301.251270] nucleus_split_migrater: processing split requests
+[48301.251279] nucleus_split_migrater: processed split requests, split 0 pages
+[48301.251283] nucleus_split_migrater: processing migrate requests
+[48301.252649] nucleus_merger: processed merge requests, merged 0 pages
+[48308.243288] nucleus_split_migrater: processed migrate requests, promoted 2880000 pages, demoted 2880000 pages
+[48311.660348] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48315.849250] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2323968, nr_to_demote: 2323456
+[48315.849264] nucleus_merger: processing merge requests
+[48315.849362] nucleus_split_migrater: processing split requests
+[48315.849372] nucleus_split_migrater: processed split requests, split 0 pages
+[48315.849376] nucleus_split_migrater: processing migrate requests
+[48315.850755] nucleus_merger: processed merge requests, merged 0 pages
+[48321.503464] nucleus_split_migrater: processed migrate requests, promoted 2323456 pages, demoted 2323456 pages
+[48326.250611] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48330.451267] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3663872, nr_to_demote: 3663360
+[48330.451281] nucleus_merger: processing merge requests
+[48330.451378] nucleus_split_migrater: processing split requests
+[48330.451388] nucleus_split_migrater: processed split requests, split 0 pages
+[48330.451392] nucleus_split_migrater: processing migrate requests
+[48330.452760] nucleus_merger: processed merge requests, merged 0 pages
+[48339.384252] nucleus_split_migrater: processed migrate requests, promoted 3663360 pages, demoted 3663360 pages
+[48340.844658] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48345.032331] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2492416, nr_to_demote: 2491904
+[48345.032345] nucleus_merger: processing merge requests
+[48345.032449] nucleus_split_migrater: processing split requests
+[48345.032459] nucleus_split_migrater: processed split requests, split 0 pages
+[48345.032463] nucleus_split_migrater: processing migrate requests
+[48345.033841] nucleus_merger: processed merge requests, merged 0 pages
+[48351.082314] nucleus_split_migrater: processed migrate requests, promoted 2491904 pages, demoted 2491904 pages
+[48355.435884] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48359.606279] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 374272, nr_to_demote: 373760
+[48359.606292] nucleus_merger: processing merge requests
+[48359.606391] nucleus_split_migrater: processing split requests
+[48359.606400] nucleus_split_migrater: processed split requests, split 0 pages
+[48359.606404] nucleus_split_migrater: processing migrate requests
+[48359.607789] nucleus_merger: processed merge requests, merged 0 pages
+[48360.537256] nucleus_split_migrater: processed migrate requests, promoted 373760 pages, demoted 373760 pages
+[48370.037962] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48374.368094] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3967488, nr_to_demote: 3966976
+[48374.368108] nucleus_merger: processing merge requests
+[48374.368208] nucleus_split_migrater: processing split requests
+[48374.368241] nucleus_split_migrater: processed split requests, split 0 pages
+[48374.368245] nucleus_split_migrater: processing migrate requests
+[48374.369593] nucleus_merger: processed merge requests, merged 0 pages
+[48384.045942] nucleus_split_migrater: processed migrate requests, promoted 3966976 pages, demoted 3966976 pages
+[48384.630316] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48388.978091] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2926592, nr_to_demote: 2926080
+[48388.978104] nucleus_merger: processing merge requests
+[48388.978209] nucleus_split_migrater: processing split requests
+[48388.978219] nucleus_split_migrater: processed split requests, split 0 pages
+[48388.978222] nucleus_split_migrater: processing migrate requests
+[48388.979592] nucleus_merger: processed merge requests, merged 0 pages
+[48396.087243] nucleus_split_migrater: processed migrate requests, promoted 2926080 pages, demoted 2926080 pages
+[48399.220366] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48403.586614] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2547712, nr_to_demote: 2547200
+[48403.586626] nucleus_merger: processing merge requests
+[48403.586729] nucleus_split_migrater: processing split requests
+[48403.586739] nucleus_split_migrater: processed split requests, split 0 pages
+[48403.586742] nucleus_split_migrater: processing migrate requests
+[48403.588120] nucleus_merger: processed merge requests, merged 0 pages
+[48409.814717] nucleus_split_migrater: processed migrate requests, promoted 2547200 pages, demoted 2547200 pages
+[48414.070448] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48418.417215] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3534336, nr_to_demote: 3533824
+[48418.417229] nucleus_merger: processing merge requests
+[48418.417325] nucleus_split_migrater: processing split requests
+[48418.417335] nucleus_split_migrater: processed split requests, split 0 pages
+[48418.417338] nucleus_split_migrater: processing migrate requests
+[48418.418719] nucleus_merger: processed merge requests, merged 0 pages
+[48427.034836] nucleus_split_migrater: processed migrate requests, promoted 3533824 pages, demoted 3533824 pages
+[48428.660014] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48432.928495] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2779136, nr_to_demote: 2778624
+[48432.928508] nucleus_merger: processing merge requests
+[48432.928602] nucleus_split_migrater: processing split requests
+[48432.928612] nucleus_split_migrater: processed split requests, split 0 pages
+[48432.928616] nucleus_split_migrater: processing migrate requests
+[48432.929998] nucleus_merger: processed merge requests, merged 0 pages
+[48439.677767] nucleus_split_migrater: processed migrate requests, promoted 2778624 pages, demoted 2778624 pages
+[48443.243949] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48447.440463] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 2322944, nr_to_demote: 2322432
+[48447.440476] nucleus_merger: processing merge requests
+[48447.440581] nucleus_split_migrater: processing split requests
+[48447.440591] nucleus_split_migrater: processed split requests, split 0 pages
+[48447.440595] nucleus_split_migrater: processing migrate requests
+[48447.441977] nucleus_merger: processed merge requests, merged 0 pages
+[48453.125583] nucleus_split_migrater: processed migrate requests, promoted 2322432 pages, demoted 2322432 pages
+[48457.835415] nucleus_algorithm: hp_count 65540, def_tier_size 15938355
+[48462.050993] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 4, nr_to_promote: 3416064, nr_to_demote: 3415552
+[48462.051005] nucleus_merger: processing merge requests
+[48462.051103] nucleus_split_migrater: processing split requests
+[48462.051113] nucleus_split_migrater: processed split requests, split 0 pages
+[48462.051117] nucleus_split_migrater: processing migrate requests
+[48462.052487] nucleus_merger: processed merge requests, merged 0 pages
+[48469.300265] ------------[ cut here ]------------
+[48469.300268] mem_cgroup_update_lru_size(00000000a6e36849, 1, -512): lru_size -511
+[48469.300277] WARNING: CPU: 13 PID: 44415 at mm/memcontrol.c:1300 mem_cgroup_update_lru_size+0xdc/0x110
+[48469.300282] Modules linked in: nucleus_algorithm(OE) nucleus_mon(OE) intel_rapl_msr intel_rapl_common i10nm_edac nfit x86_pkg_temp_thermal binfmt_misc nls_iso8859_1 intel_powerclamp coretemp rapl dell_smbios irdma ftdi_sio isst_if_mbox_pci isst_if_mmio mei_me dcdbas ipmi_ssif intel_cstate dell_wmi_descriptor wmi_bmof i40e isst_if_common usbserial mei intel_pch_thermal ioatdma dca acpi_ipmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter mac_hid sch_fq_codel dm_multipath scsi_dh_rdac scsi_dh_emc scsi_dh_alua msr efi_pstore ip_tables x_tables autofs4 btrfs blake2b_generic zstd_compress raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c raid1 raid0 multipath linear mlx5_ib ib_uverbs ib_core mgag200 i2c_algo_bit drm_kms_helper syscopyarea crct10dif_pclmul sysfillrect crc32_pclmul sysimgblt ghash_clmulni_intel fb_sys_fops mlx5_core cec aesni_intel mlxfw crypto_simd rc_core ahci psample cryptd i2c_i801 megaraid_sas tls xhci_pci ice
+[48469.300333]  pci_hyperv_intf drm i2c_smbus tg3 libahci xhci_pci_renesas intel_pmt wmi [last unloaded: nucleus_mon]
+[48469.300340] CPU: 13 PID: 44415 Comm: gups-x0-access- Tainted: G           OE     5.15.19-htmm-nucleus #156
+[48469.300342] Hardware name: Dell Inc. PowerEdge R750/01J4WF, BIOS 1.6.5 04/15/2022
+[48469.300343] RIP: 0010:mem_cgroup_update_lru_size+0xdc/0x110
+[48469.300345] Code: 08 00 00 00 00 eb 9a 45 89 e0 44 89 f1 4c 89 ea 48 c7 c6 20 0f 84 8d 48 c7 c7 4e 3c bf 8d c6 05 17 30 02 02 01 e8 7c d9 91 00 <0f> 0b eb c5 48 89 de 48 c7 c7 a0 0d 73 8e e8 f1 a5 2f 00 e9 3a ff
+[48469.300347] RSP: 0018:ff66ad1a4dab7b40 EFLAGS: 00010086
+[48469.300348] RAX: 0000000000000000 RBX: 0000000000000002 RCX: 0000000000000027
+[48469.300349] RDX: 0000000000000027 RSI: ff66ad1a4dab7980 RDI: ff188005befa0988
+[48469.300350] RBP: ff66ad1a4dab7b78 R08: ff188005befa0980 R09: 0000000000000001
+[48469.300351] R10: 0000000000ffff0a R11: 000000000000000f R12: fffffffffffffe00
+[48469.300352] R13: ff187fe6a4e99800 R14: 0000000000000001 R15: 0000000000000001
+[48469.300353] FS:  00007fa99a5fb640(0000) GS:ff188005bef80000(0000) knlGS:0000000000000000
+[48469.300354] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[48469.300355] CR2: 00007f9dd3c00000 CR3: 000000339b630003 CR4: 0000000000771ee0
+[48469.300356] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[48469.300357] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+[48469.300358] PKRU: 55555554
+[48469.300358] Call Trace:
+[48469.300359]  <TASK>
+[48469.300363]  __page_cache_release+0x188/0x260
+[48469.300366]  __put_compound_page+0x41/0x60
+[48469.300368]  release_pages+0x19d/0x4e0
+[48469.300369]  free_pages_and_swap_cache+0x48/0x60
+[48469.300372]  tlb_flush_mmu+0x3c/0x140
+[48469.300375]  tlb_finish_mmu+0x42/0x80
+[48469.300377]  unmap_region+0xef/0x120
+[48469.300380]  __do_munmap+0x21a/0x540
+[48469.300382]  __vm_munmap+0x79/0x120
+[48469.300383]  __x64_sys_munmap+0x2d/0x40
+[48469.300385]  do_syscall_64+0x59/0xc0
+[48469.300387]  ? exit_to_user_mode_prepare+0x3d/0x1c0
+[48469.300391]  ? irqentry_exit_to_user_mode+0x9/0x20
+[48469.300394]  ? irqentry_exit+0x19/0x30
+[48469.300395]  ? sysvec_call_function+0x4e/0x90
+[48469.300397]  ? asm_sysvec_call_function+0xa/0x20
+[48469.300400]  entry_SYSCALL_64_after_hwframe+0x44/0xae
+[48469.300402] RIP: 0033:0x7faba1ac6a7b
+[48469.300405] Code: 8b 15 b9 b3 0f 00 f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 f3 0f 1e fa b8 0b 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 85 b3 0f 00 f7 d8 64 89 01 48
+[48469.300406] RSP: 002b:00007fa99a5fadc8 EFLAGS: 00000202 ORIG_RAX: 000000000000000b
+[48469.300407] RAX: ffffffffffffffda RBX: ffffffffffffff80 RCX: 00007faba1ac6a7b
+[48469.300408] RDX: 0000000000000000 RSI: 0000000200201000 RDI: 00007f9d6bbfe000
+[48469.300409] RBP: 0000000000000000 R08: 00007f9d6bbfe000 R09: 99d5b77ebbfd135e
+[48469.300410] R10: 38208d15d2f00000 R11: 0000000000000202 R12: 00007f9d6bc00000
+[48469.300410] R13: 00007fff89a4e930 R14: 0000000000000040 R15: 0000000000040000
+[48469.300412]  </TASK>
+[48469.300413] ---[ end trace 7e923ae309e7d084 ]---
+[48469.307999] nucleus_split_migrater: processed migrate requests, promoted 3415040 pages, demoted 3415552 pages
+[48469.330573] nr_sampled: 204902196, nr_throttled: 0, nr_lost: 0
+[48469.330583] total runtime: 139117011750 ns, total cputime: 1002528000 us, cpu usage: 138
+[48469.330605] pebs disable
+[48472.838603] nucleus_algorithm: hp_count 0, def_tier_size 15938355
+[48472.838706] nucleus_algorithm: nr_to_split: 0, nr_to_merge: 0, nr_to_promote: 0, nr_to_demote: 0

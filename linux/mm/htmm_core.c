@@ -31,6 +31,8 @@ EXPORT_SYMBOL(nucleus_loads_local);
 unsigned long nucleus_loads_remote = 0;
 EXPORT_SYMBOL(nucleus_loads_remote);
 
+extern unsigned long nr_missed_samples;
+
 void htmm_mm_init(struct mm_struct *mm)
 {
     struct mem_cgroup *memcg = get_mem_cgroup_from_mm(mm);
@@ -1372,8 +1374,10 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	goto put_task;
     }
 
-    if (!mmap_read_trylock(mm))
-	goto put_task;
+    if (!mmap_read_trylock(mm)) {
+		WRITE_ONCE(nr_missed_samples, READ_ONCE(nr_missed_samples) + 1);
+		goto put_task;
+	}
 
     vma = find_vma(mm, address);
     if (unlikely(!vma))

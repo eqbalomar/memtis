@@ -21,6 +21,9 @@ int *cpus_in_socket = NULL;
 unsigned long current_sample_period = 0;
 EXPORT_SYMBOL(current_sample_period);
 
+unsigned long nr_missed_samples = 0;
+EXPORT_SYMBOL(nr_missed_samples);
+
 static bool valid_va(unsigned long addr)
 {
     if (!(addr >> (PGDIR_SHIFT + 9)) && addr != 0)
@@ -229,6 +232,8 @@ static int ksamplingd(void *data)
 
     /* for analytic purpose */
     unsigned long hr_dram = 0, hr_nvm = 0;
+
+	WRITE_ONCE(nr_missed_samples, 0);
 
     /* orig impl: see read_sum_exec_runtime() */
     trace_runtime = total_runtime = exec_runtime = t->se.sum_exec_runtime;
