@@ -18,6 +18,11 @@ struct task_struct *access_sampling = NULL;
 struct perf_event ***mem_event = NULL;
 int *cpus_in_socket = NULL;
 
+unsigned long core_local_loads[CPUS_PER_SOCKET] = {0};
+EXPORT_SYMBOL(core_local_loads);
+unsigned long core_remote_loads[CPUS_PER_SOCKET] = {0};
+EXPORT_SYMBOL(core_remote_loads);
+
 unsigned long current_sample_period = 0;
 EXPORT_SYMBOL(current_sample_period);
 
@@ -235,6 +240,9 @@ static int ksamplingd(void *data)
 
 	WRITE_ONCE(nr_missed_samples, 0);
 
+	memset(core_local_loads, 0, sizeof(core_local_loads));
+	memset(core_remote_loads, 0, sizeof(core_remote_loads));
+
     /* orig impl: see read_sum_exec_runtime() */
     trace_runtime = total_runtime = exec_runtime = t->se.sum_exec_runtime;
 
@@ -312,7 +320,7 @@ static int ksamplingd(void *data)
 				break;
 			    }
 
-			    update_pginfo(he->pid, he->addr, event, sample_period);
+			    update_pginfo(he->pid, he->addr, event, sample_period, cpu);
 			    //count_vm_event(HTMM_NR_SAMPLED);
 			    nr_sampled++;
 

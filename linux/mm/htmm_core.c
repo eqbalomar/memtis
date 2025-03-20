@@ -25,6 +25,9 @@
 #include "internal.h"
 #include <asm/pgtable.h>
 
+extern unsigned long core_local_loads[CPUS_PER_SOCKET];
+extern unsigned long core_remote_loads[CPUS_PER_SOCKET];
+
 unsigned long nucleus_loads_local = 0;
 EXPORT_SYMBOL(nucleus_loads_local);
 
@@ -1356,7 +1359,7 @@ static bool need_memcg_cooling (struct mem_cgroup *memcg)
     return false;
 }
 
-void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned long sample_period)
+void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned long sample_period, int cpu)
 {
     struct pid *pid_struct = find_get_pid(pid);
     struct task_struct *p = pid_struct ? pid_task(pid_struct, PIDTYPE_PID) : NULL;
@@ -1375,7 +1378,9 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
     }
 
     if (!mmap_read_trylock(mm)) {
-		WRITE_ONCE(nr_missed_samples, READ_ONCE(nr_missed_samples) + 1);
+		if (event == DRAMREAD || event == CXLREAD || event == NVMREAD) {
+			WRITE_ONCE(nr_missed_samples, READ_ONCE(nr_missed_samples) + 1);
+		}
 		goto put_task;
 	}
 
@@ -1394,8 +1399,10 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 #ifdef CONFIG_NUCLEUS
 	if (event == DRAMREAD) {
 		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + 1);
+		WRITE_ONCE(core_local_loads[cpu], READ_ONCE(core_local_loads[cpu]) + 1);
 	} else if (event == CXLREAD || event == NVMREAD) {
 		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + 1);
+		WRITE_ONCE(core_remote_loads[cpu], READ_ONCE(core_remote_loads[cpu]) + 1);
 	}
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 
