@@ -28,7 +28,7 @@ function func_cache_flush() {
 }
 
 function func_memtis_setting() {
-    echo 199 | tee /sys/kernel/mm/htmm/htmm_sample_period
+    echo 4999 | tee /sys/kernel/mm/htmm/htmm_sample_period
     echo 100007 | tee /sys/kernel/mm/htmm/htmm_inst_sample_period
     echo 1 | tee /sys/kernel/mm/htmm/htmm_thres_hot
     echo 2 | tee /sys/kernel/mm/htmm/htmm_split_period
@@ -39,7 +39,7 @@ function func_memtis_setting() {
     echo 500 | tee /sys/kernel/mm/htmm/htmm_promotion_period_in_ms
     echo 4 | tee /sys/kernel/mm/htmm/htmm_gamma
     ###  cpu cap (per mille) for ksampled
-    echo 30 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
+    echo 0 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
 
     if [[ "x${CONFIG_NS}" == "xoff" ]]; then
 	echo 1 | tee /sys/kernel/mm/htmm/htmm_thres_split
