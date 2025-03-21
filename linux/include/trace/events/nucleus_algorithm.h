@@ -84,6 +84,23 @@ TRACE_EVENT(nucleus_algorithm_inputs,
       __entry->loads_local, __entry->loads_remote, __entry->lat_local, __entry->lat_remote, __entry->t_lat_hp, __entry->t_lat_bp, __entry->hp_count, __entry->nr_missed_samples)
 )
 
+TRACE_EVENT(nucleus_core_loads,
+   TP_PROTO(unsigned long *core_local_loads, unsigned long *core_remote_loads),
+   TP_ARGS(core_local_loads, core_remote_loads),
+   TP_STRUCT__entry(
+      __array(unsigned long, core_local_loads, 32)
+      __array(unsigned long, core_remote_loads, 32)
+   ),
+   TP_fast_assign(
+      memcpy(__entry->core_local_loads, core_local_loads, sizeof(unsigned long) * 32);
+      memcpy(__entry->core_remote_loads, core_remote_loads, sizeof(unsigned long) * 32);
+   ),
+   TP_printk("[nucleus_algorithm] core_local_loads=%s, core_remote_loads=%s",
+      __print_array(__entry->core_local_loads, 32, sizeof(unsigned long)),
+      __print_array(__entry->core_remote_loads, 32, sizeof(unsigned long))
+   )
+);
+
 #endif /* _TRACE_NUCLEUS_ALGORITHM_H */
 
 /* This part must be outside protection */
