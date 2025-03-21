@@ -195,6 +195,7 @@ extern unsigned long htmm_split_quantum;
 extern unsigned int htmm_rhr_thres;
 extern unsigned int htmm_thres_hot;
 extern unsigned int htmm_cooling_period;
+extern bool htmm_cooling_enabled;
 extern unsigned int htmm_adaptation_period;
 extern unsigned int ksampled_min_sample_ratio;
 extern unsigned int ksampled_max_sample_ratio;

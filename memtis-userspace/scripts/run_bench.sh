@@ -34,6 +34,7 @@ function func_memtis_setting() {
     echo 2 | tee /sys/kernel/mm/htmm/htmm_split_period
     echo 100000 | tee /sys/kernel/mm/htmm/htmm_adaptation_period
     echo 2000000 | tee /sys/kernel/mm/htmm/htmm_cooling_period
+    echo "disabled" | tee /sys/kernel/mm/htmm/htmm_cooling_enabled
     echo 2 | tee /sys/kernel/mm/htmm/htmm_mode
     echo 500 | tee /sys/kernel/mm/htmm/htmm_demotion_period_in_ms
     echo 500 | tee /sys/kernel/mm/htmm/htmm_promotion_period_in_ms

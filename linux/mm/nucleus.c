@@ -189,8 +189,10 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 		pr_err("nucleus: failed to get or create hp\n");
 		return;
 	}
-
-	// perform_cooling(memcg, hp);
+	
+	if (htmm_cooling_enabled) {
+		perform_cooling(memcg, hp);
+	}
 
 	bp = &hp->bp_list[bp_offset];
 	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + 1);
