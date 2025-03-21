@@ -1797,8 +1797,7 @@ void intel_pmu_auto_reload_read(struct perf_event *event)
 /*
  * Special variant of intel_pmu_save_and_restart() for auto-reload.
  */
-static int
-intel_pmu_save_and_restart_reload(struct perf_event *event, int count)
+int intel_pmu_save_and_restart_reload(struct perf_event *event, int count)
 {
 	struct hw_perf_event *hwc = &event->hw;
 	int shift = 64 - x86_pmu.cntval_bits;
@@ -1850,7 +1849,17 @@ intel_pmu_save_and_restart_reload(struct perf_event *event, int count)
 
 	local64_set(&hwc->period_left, -new);
 
+#ifdef CONFIG_NUCLEUS
+	if (new >= 0) {
+		trace_printk("PEBS workaround triggered -- index: %d, count: %d, new: %ld, old: %ld, event->count: %ld;\n",
+					hwc->idx, count, new, old, event->count);
+		x86_perf_event_set_period(event);
+	} else {
+		perf_event_update_userpage(event);
+	}
+#else
 	perf_event_update_userpage(event);
+#endif
 
 	return 0;
 }
@@ -2060,7 +2069,11 @@ static void intel_pmu_drain_pebs_nhm(struct pt_regs *iregs, struct perf_sample_d
 	}
 
 	for_each_set_bit(bit, (unsigned long *)&mask, size) {
+#ifdef CONFIG_NUCLEUS
+		if (!test_bit(bit, (unsigned long *)&cpuc->pebs_enabled))
+#else
 		if ((counts[bit] == 0) && (error[bit] == 0))
+#endif
 			continue;
 
 		event = cpuc->events[bit];
@@ -2069,6 +2082,16 @@ static void intel_pmu_drain_pebs_nhm(struct pt_regs *iregs, struct perf_sample_d
 
 		if (WARN_ON_ONCE(!event->attr.precise_ip))
 			continue;
+
+#ifdef CONFIG_NUCLEUS
+		/* PEBS workaround */
+		if ((counts[bit] == 0) && (error[bit] == 0)) {
+			if (event->hw.flags & PERF_X86_EVENT_AUTO_RELOAD) {
+				intel_pmu_save_and_restart_reload(event, 0);
+			}
+			continue;
+		}
+#endif
 
 		/* log dropped samples number */
 		if (error[bit]) {

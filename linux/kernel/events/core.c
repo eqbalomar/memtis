@@ -4098,6 +4098,14 @@ static void perf_adjust_period(struct perf_event *event, u64 nsec, u64 count, bo
 	}
 }
 
+#ifdef CONFIG_NUCLEUS
+// from /arch/x86/events/perf_event.h
+#define PERF_X86_EVENT_AUTO_RELOAD	0x00200 /* use PEBS auto-reload */
+
+// from /arch/x86/events/intel/ds.c
+int intel_pmu_save_and_restart_reload(struct perf_event *event, int count);
+#endif
+
 /*
  * combine freq adjustment with unthrottling to avoid two passes over the
  * events. At the same time, make sure, having freq events does not change
@@ -4116,8 +4124,10 @@ static void perf_adjust_freq_unthr_context(struct perf_event_context *ctx,
 	 * - context have events in frequency mode (needs freq adjust)
 	 * - there are events to unthrottle on this cpu
 	 */
+#ifndef CONFIG_NUCLEUS
 	if (!(ctx->nr_freq || needs_unthr))
 		return;
+#endif
 
 	raw_spin_lock(&ctx->lock);
 	perf_pmu_disable(ctx->pmu);
@@ -4138,6 +4148,11 @@ static void perf_adjust_freq_unthr_context(struct perf_event_context *ctx,
 			perf_log_throttle(event, 1);
 			event->pmu->start(event, 0);
 		}
+
+#ifdef CONFIG_NUCLEUS
+		if (event->attr.precise_ip > 0 && hwc->flags & PERF_X86_EVENT_AUTO_RELOAD)
+			intel_pmu_save_and_restart_reload(event, 0);
+#endif
 
 		if (!event->attr.freq || !event->attr.sample_freq)
 			goto next;
