@@ -123,6 +123,8 @@ static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct 
 			bp = &hp->bp_list[i];
 			bp->hp = hp;
 			bp->access_freq = 0;
+			bp->prev_access_freq = 0;
+			bp->algo_access_freq = 0;
 			bp->offset = i;
 			INIT_LIST_HEAD(&bp->list);
 		}
@@ -195,6 +197,6 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 	}
 
 	bp = &hp->bp_list[bp_offset];
-	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + 1);
+	WRITE_ONCE(bp->access_freq, READ_ONCE(bp->access_freq) + ACCESS_FREQ_PRECISION);
 	// pr_info("nucleus: hp %lx, bp %lu, access_freq %u\n", hp_vaddr, bp_offset, bp->access_freq);
 }

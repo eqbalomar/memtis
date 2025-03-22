@@ -4,6 +4,8 @@
 #include <linux/list.h>
 #include <linux/mm_types.h>
 
+#define ACCESS_FREQ_PRECISION 10000ULL
+
 struct nucleus_hugepage {
 	atomic_t ref_count;
 
@@ -36,7 +38,8 @@ struct nucleus_basepage {
 
 	// Fields used within algorithm
 	struct list_head list;	// list head for adding to list of all basepages
-	unsigned long algo_access_freq;	// copy of access_freq for algorithm
+	unsigned long prev_access_freq;	// copy of access_freq from previous iteration of algorithm
+	unsigned long algo_access_freq;	// smoothed access_freq for algorithm
 
 	// Output of algorithm
 	bool place_in_def;
