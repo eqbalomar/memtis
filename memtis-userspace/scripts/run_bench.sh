@@ -28,7 +28,7 @@ function func_cache_flush() {
 }
 
 function func_memtis_setting() {
-    echo 4999 | tee /sys/kernel/mm/htmm/htmm_sample_period
+    echo 199 | tee /sys/kernel/mm/htmm/htmm_sample_period
     echo 100007 | tee /sys/kernel/mm/htmm/htmm_inst_sample_period
     echo 1 | tee /sys/kernel/mm/htmm/htmm_thres_hot
     echo 2 | tee /sys/kernel/mm/htmm/htmm_split_period
