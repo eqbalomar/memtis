@@ -39,7 +39,7 @@ function func_memtis_setting() {
     echo 500 | tee /sys/kernel/mm/htmm/htmm_promotion_period_in_ms
     echo 4 | tee /sys/kernel/mm/htmm/htmm_gamma
     ###  cpu cap (per mille) for ksampled
-    echo 30 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
+    echo 950 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
 
     if [[ "x${CONFIG_NS}" == "xoff" ]]; then
 	echo 1 | tee /sys/kernel/mm/htmm/htmm_thres_split
@@ -61,8 +61,8 @@ function func_memtis_setting() {
 	echo "disabled" | tee /sys/kernel/mm/htmm/htmm_cxl_mode
     fi
 
-    echo "always" | tee /sys/kernel/mm/transparent_hugepage/enabled
-    echo "always" | tee /sys/kernel/mm/transparent_hugepage/defrag
+    # echo "always" | tee /sys/kernel/mm/transparent_hugepage/enabled
+    # echo "always" | tee /sys/kernel/mm/transparent_hugepage/defrag
 }
 
 function func_prepare() {
@@ -93,6 +93,19 @@ function func_prepare() {
 	    exit -1
 	fi
 }
+
+function cleanup() {
+    sudo killall -9 memory_stat.sh
+	${DIR}/bin/kill_ksampled
+	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm $$ disable
+	sleep 2
+	sudo ${DIR}/scripts/set_htmm_memcg.sh htmm remove
+	echo "madvise" | tee /sys/kernel/mm/transparent_hugepage/enabled
+    echo "madvise" | tee /sys/kernel/mm/transparent_hugepage/defrag
+    echo "Cleaned up"
+}
+
+trap cleanup EXIT
 
 function func_main() {
     ${DIR}/bin/kill_ksampled
