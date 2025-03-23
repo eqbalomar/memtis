@@ -179,6 +179,10 @@ static bool try_to_unmap_clean(struct page_vma_mapped_walk *pvmw, struct page *p
     pte_t newpte;
     pginfo_t *pginfo;
 
+	if (!pvmw->pte || !pvmw->vma) {
+		return false;
+	}
+
     VM_BUG_ON_PAGE(PageCompound(page), page);
     VM_BUG_ON_PAGE(!PageAnon(page), page);
     VM_BUG_ON_PAGE(!PageLocked(page), page);
