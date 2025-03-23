@@ -2,7 +2,7 @@
 
 BIN=/home/omar/nucleus/apps
 gups_cores=16
-duration=1800
+duration=7200
 wss=128
 num_bps_accessed=256
 
