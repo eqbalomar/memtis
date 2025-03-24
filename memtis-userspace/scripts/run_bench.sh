@@ -39,7 +39,7 @@ function func_memtis_setting() {
     echo 500 | tee /sys/kernel/mm/htmm/htmm_promotion_period_in_ms
     echo 4 | tee /sys/kernel/mm/htmm/htmm_gamma
     ###  cpu cap (per mille) for ksampled
-    echo 950 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
+    echo 30 | tee /sys/kernel/mm/htmm/ksampled_soft_cpu_quota
 
     if [[ "x${CONFIG_NS}" == "xoff" ]]; then
 	echo 1 | tee /sys/kernel/mm/htmm/htmm_thres_split
