@@ -69,6 +69,9 @@ static int nucleus_merger(void *data)
                 goto free_req;
             }
             merged += collapse_huge_page(hp->mm, hp_addr, &hpage, target_node, 0, 0);
+            if (!IS_ERR_OR_NULL(hpage)) {
+                put_page(hpage);
+            }
             // collapse_huge_page will release mm lock
 
 free_req:
