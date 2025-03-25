@@ -616,6 +616,7 @@ struct mm_struct {
 #endif
 
 #ifdef CONFIG_NUCLEUS
+		spinlock_t hash_lock;
 		DECLARE_HASHTABLE(nucleus_hugepages_hash, NUCLEUS_HUGEPAGES_HASH_BITS);
 #endif
 	} __randomize_layout;

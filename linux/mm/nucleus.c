@@ -48,13 +48,18 @@ void nucleus_init_def_tier_size()
 
 void nucleus_mm_init(struct mm_struct *mm)
 {
+	unsigned long flags;
 	// pr_info("nucleus: mm_init\n");
     if (!mm || !mm->htmm_enabled) {
 		return;
     }
 
+	spin_lock_init(&mm->hash_lock);
+
+	spin_lock_irqsave(&mm->hash_lock, flags);
 	// pr_info("nucleus: hash_init for mm %p, htmm_enabled %d\n", mm, mm->htmm_enabled);
 	hash_init(mm->nucleus_hugepages_hash);
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
 }
 
 void nucleus_mm_exit(struct mm_struct *mm)
@@ -62,12 +67,14 @@ void nucleus_mm_exit(struct mm_struct *mm)
 	struct nucleus_hugepage *hp;
 	struct hlist_node *tmp;
 	int bkt;
+	unsigned long flags;
 	// pr_info("nucleus: mm_exit\n");
 
 	if (!mm || !mm->htmm_enabled) {
 		return;
 	}
 
+	spin_lock_irqsave(&mm->hash_lock, flags);
 	// pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
 	if (!hash_empty(mm->nucleus_hugepages_hash)) {
 		// pr_info("nucleus: hash_del for mm %p, htmm_enabled %d, is_empty: %d\n", mm, mm->htmm_enabled, hash_empty(mm->nucleus_hugepages_hash));
@@ -77,26 +84,34 @@ void nucleus_mm_exit(struct mm_struct *mm)
 			atomic_dec(&hp->ref_count);
 		}
 	}
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
 }
 
 static struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
 {
-	struct nucleus_hugepage *hp;
+	struct nucleus_hugepage *hp, *ret_hp = NULL;
+	unsigned long flags;
 
+	spin_lock_irqsave(&mm->hash_lock, flags);
 	hash_for_each_possible(mm->nucleus_hugepages_hash, hp, hash, hp_vaddr) {
 		if (hp->address == hp_vaddr) {
-			return hp;
+			ret_hp = hp;
+			break;
 		}
 	}
-
-	return NULL;
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
+	return ret_hp;
 }
 
 static void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp)
 {
+	unsigned long flags;
+
 	hp->mm = mm;
 	hp->address = hp_vaddr;
+	spin_lock_irqsave(&mm->hash_lock, flags);
 	hash_add(mm->nucleus_hugepages_hash, &hp->hash, hp_vaddr);
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
 }
 
 static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
