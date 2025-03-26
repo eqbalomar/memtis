@@ -357,6 +357,7 @@ static int ksamplingd(void *data)
 		    smp_mb();
 		    WRITE_ONCE(up->data_tail, up->data_tail + ph->size);
 		} while (cond);
+		cond_resched();
 	    }
 	}
 
