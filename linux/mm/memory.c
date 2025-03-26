@@ -78,6 +78,10 @@
 #include <linux/htmm.h>
 #endif
 
+#ifdef CONFIG_NUCLEUS
+#include <linux/nucleus.h>
+#endif
+
 #include <trace/events/kmem.h>
 
 #include <asm/io.h>
@@ -3835,6 +3839,9 @@ setpte:
 	update_mmu_cache(vma, vmf->address, vmf->pte);
 unlock:
 	pte_unmap_unlock(vmf->pte, vmf->ptl);
+#ifdef CONFIG_NUCLEUS
+	create_nucleus_hugepage(vma, vmf->address);
+#endif	
 	return ret;
 release:
 	put_page(page);

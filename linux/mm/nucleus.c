@@ -90,73 +90,89 @@ void nucleus_mm_exit(struct mm_struct *mm)
 static struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
 {
 	struct nucleus_hugepage *hp, *ret_hp = NULL;
-	unsigned long flags;
 
-	spin_lock_irqsave(&mm->hash_lock, flags);
 	hash_for_each_possible(mm->nucleus_hugepages_hash, hp, hash, hp_vaddr) {
 		if (hp->address == hp_vaddr) {
 			ret_hp = hp;
 			break;
 		}
 	}
-	spin_unlock_irqrestore(&mm->hash_lock, flags);
 	return ret_hp;
 }
 
 static void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp)
 {
-	unsigned long flags;
-
 	hp->mm = mm;
 	hp->address = hp_vaddr;
-	spin_lock_irqsave(&mm->hash_lock, flags);
 	hash_add(mm->nucleus_hugepages_hash, &hp->hash, hp_vaddr);
-	spin_unlock_irqrestore(&mm->hash_lock, flags);
 }
 
-static struct nucleus_hugepage *get_or_create_nucleus_hugepage(struct mm_struct *mm, unsigned long hp_vaddr)
+void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address)
 {
 	int i;
-	unsigned long flags;
-	struct nucleus_hugepage *hp = get_nucleus_hugepage(mm, hp_vaddr);
+	unsigned long flags, address_hp_aligned, hp_vaddr;
+	struct nucleus_hugepage *hp;
 	struct nucleus_basepage *bp;
 	struct nucleus_add_request *req;
-	if (!hp) {
-		hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
-		if (!hp) {
-			pr_err("nucleus: failed to allocate memory for hp\n");
-			return NULL;
-		}
-		// pr_info("nucleus: created hp %lx\n", hp_vaddr);
-		INIT_LIST_HEAD(&hp->list);
-		hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
-		if (!hp->bp_list) {
-			pr_err("nucleus: failed to allocate memory for bp_list\n");
-			return NULL;
-		}
-		for (i = 0; i < HPAGE_PMD_NR; i++) {
-			bp = &hp->bp_list[i];
-			bp->hp = hp;
-			bp->access_freq = 0;
-			bp->prev_access_freq = 0;
-			bp->algo_access_freq = 0;
-			bp->offset = i;
-			INIT_LIST_HEAD(&bp->list);
-		}
-		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
-		atomic_set(&hp->ref_count, 1);
+	struct mm_struct *mm;
 
-		req = kzalloc(sizeof(struct nucleus_add_request), GFP_KERNEL);
-		if (!req) {
-			pr_err("nucleus: failed to allocate memory for req\n");
-			return NULL;
-		}
-		req->hp = hp;
-		spin_lock_irqsave(&nucleus_add_queue.request_queue_lock, flags);
-		list_add_tail(&req->list, &nucleus_add_queue.request_queue);
-		spin_unlock_irqrestore(&nucleus_add_queue.request_queue_lock, flags);
+	if (!vma) {
+		return;
 	}
-	return hp;
+	mm = vma->vm_mm;
+	if (!mm || !mm->htmm_enabled) {
+		return;
+	}
+
+	address_hp_aligned = address & HPAGE_PMD_MASK;
+	if(address_hp_aligned < vma->vm_start || address_hp_aligned + HPAGE_PMD_SIZE > vma->vm_end) {
+		return;
+	}
+	hp_vaddr = address_hp_aligned >> HPAGE_PMD_SHIFT;
+
+	spin_lock_irqsave(&mm->hash_lock, flags);
+	hp = get_nucleus_hugepage(mm, hp_vaddr);
+	if (hp) {
+		spin_unlock_irqrestore(&mm->hash_lock, flags);
+		return;
+	}
+
+	hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
+	if (!hp) {
+		pr_err("nucleus: failed to allocate memory for hp\n");
+		spin_unlock_irqrestore(&mm->hash_lock, flags);
+		return;
+	}
+	// pr_info("nucleus: created hp %lx\n", hp_vaddr);
+	INIT_LIST_HEAD(&hp->list);
+	hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
+	if (!hp->bp_list) {
+		pr_err("nucleus: failed to allocate memory for bp_list\n");
+		spin_unlock_irqrestore(&mm->hash_lock, flags);
+		return;
+	}
+	for (i = 0; i < HPAGE_PMD_NR; i++) {
+		bp = &hp->bp_list[i];
+		bp->hp = hp;
+		bp->access_freq = 0;
+		bp->prev_access_freq = 0;
+		bp->algo_access_freq = 0;
+		bp->offset = i;
+		INIT_LIST_HEAD(&bp->list);
+	}
+	atomic_set(&hp->ref_count, 1);
+	insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
+
+	req = kzalloc(sizeof(struct nucleus_add_request), GFP_KERNEL);
+	if (!req) {
+		pr_err("nucleus: failed to allocate memory for req\n");
+		return;
+	}
+	req->hp = hp;
+	spin_lock_irqsave(&nucleus_add_queue.request_queue_lock, flags);
+	list_add_tail(&req->list, &nucleus_add_queue.request_queue);
+	spin_unlock_irqrestore(&nucleus_add_queue.request_queue_lock, flags);
 }
 
 static void perform_cooling(struct mem_cgroup *memcg, struct nucleus_hugepage *hp)
@@ -193,6 +209,7 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 	unsigned long bp_offset;
 	struct nucleus_hugepage *hp;
 	struct nucleus_basepage *bp;
+	unsigned long flags;
 
 	if (!mm || !mm->htmm_enabled) {
 		return;
@@ -200,10 +217,11 @@ void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, st
 
 	hp_vaddr = address >> HPAGE_PMD_SHIFT;
 	bp_offset = (address & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
-	hp = get_or_create_nucleus_hugepage(mm, hp_vaddr);
+	spin_lock_irqsave(&mm->hash_lock, flags);
+	hp = get_nucleus_hugepage(mm, hp_vaddr);
+	spin_unlock_irqrestore(&mm->hash_lock, flags);
 
 	if (!hp) {
-		pr_err("nucleus: failed to get or create hp\n");
 		return;
 	}
 	

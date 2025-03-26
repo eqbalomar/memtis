@@ -36,6 +36,10 @@
 #include <linux/page_owner.h>
 #include <linux/htmm.h>
 
+#ifdef CONFIG_NUCLEUS
+#include <linux/nucleus.h>
+#endif
+
 #include <asm/tlb.h>
 #include <asm/pgalloc.h>
 #include "internal.h"
@@ -679,6 +683,9 @@ static vm_fault_t __do_huge_pmd_anonymous_page(struct vm_fault *vmf,
 		else
 		    count_vm_events(HTMM_ALLOC_NVM, HPAGE_PMD_NR);
 #endif
+#ifdef CONFIG_NUCLEUS
+		create_nucleus_hugepage(vma, vmf->address);
+#endif	
 	}
 
 	return 0;

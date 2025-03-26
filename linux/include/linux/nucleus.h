@@ -96,6 +96,7 @@ static inline __attribute__((always_inline)) unsigned long rdtscp(void)
 void nucleus_init_def_tier_size(void);
 void nucleus_mm_init(struct mm_struct *mm);
 void nucleus_mm_exit(struct mm_struct *mm);
+void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address);
 void nucleus_update_access_freq_and_perform_cooling(struct mem_cgroup *memcg, struct mm_struct *mm, unsigned long address);
 
 /* nucleus_merger.c */
