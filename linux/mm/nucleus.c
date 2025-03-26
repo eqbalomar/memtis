@@ -115,6 +115,7 @@ void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address)
 	struct nucleus_basepage *bp;
 	struct nucleus_add_request *req;
 	struct mm_struct *mm;
+	bool should_free = false;
 
 	if (!vma) {
 		return;
@@ -130,17 +131,9 @@ void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address)
 	}
 	hp_vaddr = address_hp_aligned >> HPAGE_PMD_SHIFT;
 
-	spin_lock_irqsave(&mm->hash_lock, flags);
-	hp = get_nucleus_hugepage(mm, hp_vaddr);
-	if (hp) {
-		spin_unlock_irqrestore(&mm->hash_lock, flags);
-		return;
-	}
-
 	hp = kzalloc(sizeof(struct nucleus_hugepage), GFP_KERNEL);
 	if (!hp) {
 		pr_err("nucleus: failed to allocate memory for hp\n");
-		spin_unlock_irqrestore(&mm->hash_lock, flags);
 		return;
 	}
 	// pr_info("nucleus: created hp %lx\n", hp_vaddr);
@@ -148,7 +141,6 @@ void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address)
 	hp->bp_list = vzalloc(HPAGE_PMD_NR * sizeof(struct nucleus_basepage));
 	if (!hp->bp_list) {
 		pr_err("nucleus: failed to allocate memory for bp_list\n");
-		spin_unlock_irqrestore(&mm->hash_lock, flags);
 		return;
 	}
 	for (i = 0; i < HPAGE_PMD_NR; i++) {
@@ -161,8 +153,19 @@ void create_nucleus_hugepage(struct vm_area_struct *vma, unsigned long address)
 		INIT_LIST_HEAD(&bp->list);
 	}
 	atomic_set(&hp->ref_count, 1);
-	insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
+
+	spin_lock_irqsave(&mm->hash_lock, flags);
+	if (get_nucleus_hugepage(mm, hp_vaddr)) {
+		should_free = true;
+	} else {
+		insert_to_nucleus_hugepages_hash(mm, hp_vaddr, hp);
+	}
 	spin_unlock_irqrestore(&mm->hash_lock, flags);
+	if (should_free) {
+		vfree(hp->bp_list);
+		kfree(hp);
+		return;
+	}
 
 	req = kzalloc(sizeof(struct nucleus_add_request), GFP_KERNEL);
 	if (!req) {
