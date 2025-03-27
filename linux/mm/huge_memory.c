@@ -36,6 +36,10 @@
 #include <linux/page_owner.h>
 #include <linux/htmm.h>
 
+#ifdef CONFIG_HTMM
+#include <linux/mempolicy.h>
+#endif
+
 #include <asm/tlb.h>
 #include <asm/pgalloc.h>
 #include "internal.h"
@@ -745,6 +749,12 @@ vm_fault_t do_huge_pmd_anonymous_page(struct vm_fault *vmf)
 	gfp_t gfp;
 	struct page *page;
 	unsigned long haddr = vmf->address & HPAGE_PMD_MASK;
+
+#ifdef CONFIG_HTMM
+	if (!htmm_alloc_hugepage) {
+		return VM_FAULT_FALLBACK;
+	}
+#endif
 
 	if (!transhuge_vma_suitable(vma, haddr))
 		return VM_FAULT_FALLBACK;

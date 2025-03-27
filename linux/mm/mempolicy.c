@@ -3032,6 +3032,7 @@ unsigned int htmm_sample_period = 199;
 unsigned int htmm_inst_sample_period = 100007;
 unsigned int htmm_thres_hot = 1;
 unsigned int htmm_cooling_period = 2000000;
+bool htmm_alloc_hugepage = true; /* allocate hugepages on page fault with THP */
 unsigned int htmm_adaptation_period = 100000;
 unsigned int htmm_split_period = 2; /* used to shift the wss of memcg */
 unsigned long htmm_split_quantum = 200; /* time interval in seconds between split decisions */
@@ -3285,6 +3286,33 @@ static ssize_t htmm_cooling_period_store(struct kobject *kobj,
 static struct kobj_attribute htmm_cooling_period_attr =
 	__ATTR(htmm_cooling_period, 0644, htmm_cooling_period_show,
 	       htmm_cooling_period_store);
+
+static ssize_t htmm_alloc_hugepage_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+	if (htmm_alloc_hugepage)
+		return sysfs_emit(buf, "alloc_hugepage: %s\n", "[enabled] disabled");
+	else
+		return sysfs_emit(buf, "alloc_hugepage: %s\n", "enabled [disabled]");
+}
+
+static ssize_t htmm_alloc_hugepage_store(struct kobject *kobj,
+		 struct kobj_attribute *attr,
+		 const char *buf, size_t count)
+{
+	if (sysfs_streq(buf, "enabled"))
+		htmm_alloc_hugepage = true;
+	else if (sysfs_streq(buf, "disabled"))
+		htmm_alloc_hugepage = false;
+	else
+		return -EINVAL;
+
+	return count;
+}
+
+static struct kobj_attribute htmm_alloc_hugepage_attr =
+__ATTR(htmm_alloc_hugepage, 0644, htmm_alloc_hugepage_show,
+	htmm_alloc_hugepage_store);
 
 static ssize_t ksampled_min_sample_ratio_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf)
@@ -3667,6 +3695,7 @@ static struct attribute *htmm_attrs[] = {
 	&htmm_rhr_thres_attr.attr,
 	&htmm_thres_hot_attr.attr,
 	&htmm_cooling_period_attr.attr,
+	&htmm_alloc_hugepage_attr.attr,
 	&htmm_adaptation_period_attr.attr,
 	&ksampled_min_sample_ratio_attr.attr,
 	&ksampled_max_sample_ratio_attr.attr,
