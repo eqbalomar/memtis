@@ -120,8 +120,13 @@ unsigned long get_nr_lru_pages_node(struct mem_cgroup *memcg, pg_data_t *pgdat)
 
     lruvec = mem_cgroup_lruvec(memcg, pgdat);
 
+#ifdef CONFIG_NUCLEUS
+	nr_pages += lruvec_lru_size(lruvec, LRU_INACTIVE_ANON, MAX_NR_ZONES);
+	nr_pages += lruvec_lru_size(lruvec, LRU_ACTIVE_ANON, MAX_NR_ZONES);
+#else
     for_each_lru(lru)
 	nr_pages += lruvec_lru_size(lruvec, lru, MAX_NR_ZONES);
+#endif
    
     return nr_pages;
 }
