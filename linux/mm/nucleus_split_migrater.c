@@ -285,7 +285,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         } else {
             bp_addr = hp_addr + (bp->offset << PAGE_SHIFT);
             pte = pte_offset_map(pmd, bp_addr);
-            if (!pte) {
+            if (!pte || !pte_present(*pte)) {
                 // pr_info("nucleus_split_migrater: hp %lx bp %u pte not found\n", hp->address, bp->offset);
                 pte_unmap(pte);
                 mmap_read_unlock(hp->mm);
