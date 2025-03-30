@@ -51,6 +51,12 @@ static void check_and_demote_file_pages(void) {
 	}
 
     memcg = pn->memcg;
+    if (!memcg || !memcg->htmm_enabled) {
+        return;
+    }
+    if (!memcg->nodeinfo || !memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]) {
+        return;
+    }
     cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
     new_nr_pages = cur_nr_pages + to_merge_in_def * HPAGE_PMD_NR;
     max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;

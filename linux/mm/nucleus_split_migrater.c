@@ -420,6 +420,13 @@ free_req:
     local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
     remote_pgdat = NODE_DATA(HTMM_CXL_REMOTE_NUMA);
 
+    if (!memcg || !memcg->htmm_enabled) {
+        goto failed_migrations;
+    }
+    if (!memcg->nodeinfo || !memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]) {
+        goto failed_migrations;
+    }
+
     cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat) + cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
     new_nr_pages = cur_nr_pages + nr_to_promote - nr_to_demote;
     max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
@@ -496,6 +503,7 @@ free_req:
     list_splice_tail(&failed_demotion_list, &demotion_list);
     list_splice_tail(&failed_promotion_list, &promotion_list);
 
+failed_migrations:
     for (i = 0; i < NUM_NUMA_NODES; i++) {
         if (lruvecs[i] && nr_taken[i] > 0) {
             spin_lock_irq(&lruvecs[i]->lru_lock);
