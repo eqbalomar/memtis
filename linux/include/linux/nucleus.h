@@ -5,6 +5,7 @@
 #include <linux/mm_types.h>
 
 #define ACCESS_FREQ_PRECISION 10000ULL
+#define CAPACITY_THRES 95
 
 struct nucleus_hugepage {
 	atomic_t ref_count;
@@ -106,5 +107,6 @@ void nucleus_merger_exit(void);
 /* nucleus_split_migrater.c */
 int nucleus_split_migrater_init(void);
 void nucleus_split_migrater_exit(void);
+unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file);
 
 #endif /* _LINUX_NUCLEUS_H */

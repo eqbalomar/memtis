@@ -35,7 +35,6 @@ EXPORT_SYMBOL(nucleus_process_split_migrate);
 static struct task_struct *knucleussplitmigraterd = NULL;
 
 #define NUM_NUMA_NODES 2
-#define CAPACITY_THRES 95
 
 static bool has_split_or_migrate_requests(void)
 {
@@ -235,7 +234,7 @@ static __always_inline void update_lru_sizes(struct lruvec *lruvec, enum lru_lis
     }
 }
 
-static unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file)
+unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file)
 {
     struct page *page, *page_tmp;
     unsigned long nr_pages, nr_taken_file = 0, nr_zone_taken[MAX_NR_ZONES] = {0};

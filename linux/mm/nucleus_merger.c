@@ -32,6 +32,59 @@ static bool has_merge_requests(void)
     return false;
 }
 
+static void check_and_demote_file_pages(void) {
+    unsigned long to_merge_in_def, cur_nr_pages, new_nr_pages, max_nr_pages;
+    unsigned long nr_to_demote_file = 0, nr_taken_file = 0, nr_demoted_file = 0;
+    struct mem_cgroup *memcg;
+    struct mem_cgroup_per_node *pn;
+    struct lruvec *lruvec = NULL;
+    pg_data_t *local_pgdat;
+    LIST_HEAD(demotion_list);
+    LIST_HEAD(failed_demotion_list);
+
+    to_merge_in_def = atomic_read(&nucleus_process_merge);
+    local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
+
+    pn = next_memcg_cand(local_pgdat);
+	if (!pn) {
+		return;
+	}
+
+    memcg = pn->memcg;
+    cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
+    new_nr_pages = cur_nr_pages + to_merge_in_def * HPAGE_PMD_NR;
+    max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
+    if (new_nr_pages > CAPACITY_THRES * max_nr_pages / 100) {
+        nr_to_demote_file = new_nr_pages - CAPACITY_THRES * max_nr_pages / 100;
+        pr_info("nucleus_merger: new_nr_pages exceeds cgroup limit, need to demote %lu file pages\n", nr_to_demote_file);
+        lruvec = mem_cgroup_lruvec(memcg, local_pgdat);
+        nr_taken_file = add_file_pages_to_demotion_list(lruvec, LRU_INACTIVE_FILE, &demotion_list, nr_to_demote_file);
+        nr_to_demote_file -= nr_taken_file;
+        if (nr_to_demote_file > 0) {
+            nr_taken_file += add_file_pages_to_demotion_list(lruvec, LRU_ACTIVE_FILE, &demotion_list, nr_to_demote_file);
+        }
+        pr_info("nucleus_merger: added %lu file pages to demotion list\n", nr_taken_file);
+    }
+
+    if (!nr_taken_file) {
+        return;
+    }
+
+    nr_demoted_file = migrate_page_list_safe(&demotion_list, local_pgdat, false);
+    if (!list_empty(&failed_demotion_list)) {
+        list_splice_tail(&failed_demotion_list, &demotion_list);
+    }
+
+    if (lruvec && nr_taken_file > 0) {
+        spin_lock_irq(&lruvec->lru_lock);
+        move_pages_to_lru(lruvec, &demotion_list);
+        __mod_node_page_state(local_pgdat, NR_ISOLATED_FILE, -nr_taken_file);
+        spin_unlock_irq(&lruvec->lru_lock);
+    }
+
+    pr_info("nucleus_merger: demoted %lu file pages\n", nr_demoted_file);
+}
+
 static int nucleus_merger(void *data)
 {
 	unsigned long flags, hp_addr;
@@ -50,6 +103,9 @@ static int nucleus_merger(void *data)
 		pr_info("nucleus_merger: processing merge requests\n");
         start_tsc = rdtscp();
         merged = 0;
+
+        check_and_demote_file_pages();
+
 		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
 		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queue.request_queue, list) {
 			hp = req->hp;
