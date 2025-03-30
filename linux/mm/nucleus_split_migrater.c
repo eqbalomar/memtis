@@ -223,6 +223,53 @@ free_req:
     return split;
 }
 
+static __always_inline void update_lru_sizes(struct lruvec *lruvec, enum lru_list lru, unsigned long *nr_zone_taken)
+{
+    int zid;
+
+    for (zid = 0; zid < MAX_NR_ZONES; zid++) {
+        if (!nr_zone_taken[zid])
+            continue;
+
+        update_lru_size(lruvec, lru, zid, -nr_zone_taken[zid]);
+    }
+}
+
+static unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file)
+{
+    struct page *page, *page_tmp;
+    unsigned long nr_pages, nr_taken_file = 0, nr_zone_taken[MAX_NR_ZONES] = {0};
+    struct list_head *lru_list = &lruvec->lists[lru];
+
+    spin_lock_irq(&lruvec->lru_lock);
+    list_for_each_entry_safe(page, page_tmp, lru_list, lru) {
+        if (nr_taken_file >= nr_to_demote_file) {
+            break;
+        }
+        if (!__isolate_lru_page_prepare(page, 0)) {
+            continue;
+        }
+        if (unlikely(!get_page_unless_zero(page))) {
+            continue;
+        }
+        if (!TestClearPageLRU(page)) {
+            put_page(page);
+            continue;
+        }
+        list_move(&page->lru, demotion_list);
+        nr_pages = compound_nr(page);
+        nr_taken_file += nr_pages;
+        nr_zone_taken[page_zonenum(page)] += nr_pages;
+    }
+
+    update_lru_sizes(lruvec, lru, nr_zone_taken);
+    if (nr_taken_file > 0) {
+        __mod_node_page_state(NODE_DATA(HTMM_CXL_LOCAL_NUMA), NR_ISOLATED_FILE, nr_taken_file);
+    }
+    spin_unlock_irq(&lruvec->lru_lock);
+    return nr_taken_file;
+}
+
 static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned long *demoted)
 {
     unsigned long flags;
@@ -231,21 +278,21 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
     struct nucleus_basepage *bp;
     struct page *page, *page_tmp;
     struct lruvec *lruvec;
-    struct mem_cgroup *memcg;
+    struct mem_cgroup *memcg = NULL;
     pg_data_t *local_pgdat, *remote_pgdat;
     pmd_t *pmd;
     pte_t *pte;
     unsigned long hp_addr, bp_addr;
     int i, node_id, target_node;
-    unsigned long nr_promoted, nr_to_promote, total_promoted = 0;
-    unsigned long nr_demoted, nr_to_demote, total_demoted = 0;
-    unsigned long max_nr_pages, cur_nr_pages, compound_nr_page;
+    unsigned long nr_promoted, nr_to_promote = 0, total_promoted = 0;
+    unsigned long nr_demoted, nr_to_demote = 0, nr_to_demote_file = 0, total_demoted = 0;
+    unsigned long max_nr_pages, cur_nr_pages, compound_nr_page, new_nr_pages;
     LIST_HEAD(promotion_list);
     LIST_HEAD(demotion_list);
     LIST_HEAD(failed_promotion_list);
     LIST_HEAD(failed_demotion_list);
     struct lruvec *lruvecs[NUM_NUMA_NODES] = {NULL};
-    unsigned long nr_taken[NUM_NUMA_NODES] = {0}, cur_nr_taken[NUM_NUMA_NODES] = {0};
+    unsigned long nr_taken[NUM_NUMA_NODES] = {0}, cur_nr_taken[NUM_NUMA_NODES] = {0}, nr_taken_file = 0;
 
     lru_add_drain();
 
@@ -305,6 +352,9 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         mmap_read_unlock(hp->mm);
         // pr_info("nucleus_split_migrater: unlocked mm for hp %lx\n", hp->address);
 
+        if (memcg == NULL) {
+            memcg = page_memcg(page);
+        }
         lruvec = mem_cgroup_page_lruvec(page);
         node_id = page_to_nid(page);
         if (node_id >= NUM_NUMA_NODES) {
@@ -337,13 +387,15 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         }
 
         target_node = req->target_node;
+        compound_nr_page = compound_nr(page);
         if (target_node == HTMM_CXL_LOCAL_NUMA) {
             list_move(&page->lru, &promotion_list);
+            nr_to_promote += compound_nr_page;
         } else {
             list_move(&page->lru, &demotion_list);
+            nr_to_demote += compound_nr_page;
         }
         // pr_info("nucleus_split_migrater: moved page to %d list\n", target_node);
-        compound_nr_page = compound_nr(page);
         update_lru_size(lruvec, page_lru(page), page_zonenum(page), -compound_nr_page);
         // pr_info("nucleus_split_migrater: updated lru size\n");
         spin_unlock_irq(&lruvec->lru_lock);
@@ -369,6 +421,22 @@ free_req:
     local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
     remote_pgdat = NODE_DATA(HTMM_CXL_REMOTE_NUMA);
 
+    cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat) + cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
+    new_nr_pages = cur_nr_pages + nr_to_promote - nr_to_demote;
+    max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
+    if (new_nr_pages > CAPACITY_THRES * max_nr_pages / 100) {
+        nr_to_demote_file = new_nr_pages - CAPACITY_THRES * max_nr_pages / 100;
+        pr_info("nucleus_split_migrater: new_nr_pages exceeds cgroup limit, need to demote %lu file pages\n", nr_to_demote_file);
+        lruvec = mem_cgroup_lruvec(memcg, local_pgdat);
+        nr_taken_file = add_file_pages_to_demotion_list(lruvec, LRU_INACTIVE_FILE, &demotion_list, nr_to_demote_file);
+        nr_to_demote_file -= nr_taken_file;
+        if (nr_to_demote_file > 0) {
+            nr_taken_file += add_file_pages_to_demotion_list(lruvec, LRU_ACTIVE_FILE, &demotion_list, nr_to_demote_file);
+        }
+        cur_nr_taken[HTMM_CXL_LOCAL_NUMA] += nr_taken_file;
+        pr_info("nucleus_split_migrater: added %lu file pages to demotion list\n", nr_taken_file);
+    }
+
     do {
         LIST_HEAD(cur_promotion_list);
         LIST_HEAD(cur_demotion_list);
@@ -385,7 +453,7 @@ free_req:
                 cur_nr_pages += cur_nr_taken[HTMM_CXL_REMOTE_NUMA];
                 // pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
-            if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
+            if (cur_nr_pages + compound_nr_page <= CAPACITY_THRES * max_nr_pages / 100) {
                 list_move(&page->lru, &cur_demotion_list);
                 nr_to_demote += compound_nr_page;
                 cur_nr_pages += compound_nr_page;
@@ -410,7 +478,7 @@ free_req:
                 cur_nr_pages += cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
                 // pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
             }
-            if (cur_nr_pages + compound_nr_page < CAPACITY_THRES * max_nr_pages / 100) {
+            if (cur_nr_pages + compound_nr_page <= CAPACITY_THRES * max_nr_pages / 100) {
                 list_move(&page->lru, &cur_promotion_list);
                 nr_to_promote += compound_nr_page;
                 cur_nr_pages += compound_nr_page;
@@ -438,6 +506,12 @@ free_req:
                 move_pages_to_lru(lruvecs[i], &promotion_list);
             }
             __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_ANON, -nr_taken[i]);
+            spin_unlock_irq(&lruvecs[i]->lru_lock);
+        }
+        if (i == HTMM_CXL_LOCAL_NUMA && lruvecs[i] && nr_taken_file > 0) {
+            // file pages are only demoted, so nr_taken_file is only updated for local node
+            spin_lock_irq(&lruvecs[i]->lru_lock);
+            __mod_node_page_state(NODE_DATA(i), NR_ISOLATED_FILE, -nr_taken_file);
             spin_unlock_irq(&lruvecs[i]->lru_lock);
         }
     }
