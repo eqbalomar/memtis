@@ -117,7 +117,7 @@ static unsigned long split_hugepages(void)
         // pr_info("nucleus_split_migrater: split hp %lx\n", hp->address);
         hp_addr = hp->address << HPAGE_PMD_SHIFT;
         if (!hp->mm) {
-            // pr_info("nucleus_split_migrater: hp %lx mm not found\n", hp->address);
+            pr_warn("nucleus_split_migrater: split_hugepages: hp %lx mm not found\n", hp->address);
             goto free_req;
         }
         mmap_read_lock(hp->mm);
@@ -133,7 +133,7 @@ static unsigned long split_hugepages(void)
             goto free_req;
         }
         if (!pmd_trans_huge(*pmd)) {
-            // pr_info("nucleus_split_migrater: hp %lx not pmd_trans_huge\n", hp->address);
+            pr_warn("nucleus_split_migrater: split_hugepages: hp %lx not pmd_trans_huge\n", hp->address);
             mmap_read_unlock(hp->mm);
             goto free_req;
         }
@@ -277,7 +277,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
     struct nucleus_basepage *bp;
     struct page *page, *page_tmp;
     struct lruvec *lruvec;
-    struct mem_cgroup *memcg = NULL;
+    struct mem_cgroup *memcg = NULL, *memcg_tmp = NULL;
     pg_data_t *local_pgdat, *remote_pgdat;
     pmd_t *pmd;
     pte_t *pte;
@@ -328,6 +328,10 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         }
         if (pmd_trans_huge(*pmd)) {
             page = pmd_page(*pmd);
+        } else if (!bp) {
+            pr_warn("nucleus_split_migrater: migrate_hugepages_and_basepages pmd_trans_huge is not set for hp %lx migration\n", hp->address);
+            mmap_read_unlock(hp->mm);
+            goto free_req;
         } else {
             bp_addr = hp_addr + (bp->offset << PAGE_SHIFT);
             pte = pte_offset_map(pmd, bp_addr);
@@ -351,8 +355,26 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         mmap_read_unlock(hp->mm);
         // pr_info("nucleus_split_migrater: unlocked mm for hp %lx\n", hp->address);
 
+        memcg_tmp = page_memcg(page);
         if (memcg == NULL) {
-            memcg = page_memcg(page);
+            if (memcg_tmp && memcg_tmp->htmm_enabled) {
+                memcg = memcg_tmp;
+            } else if (!memcg_tmp) {
+                pr_warn("nucleus_split_migrater: hp %lx memcg not set and not found\n", hp->address);
+                goto free_req;
+            } else {
+                pr_warn("nucleus_split_migrater: hp %lx memcg not set and not htmm enabled\n", hp->address);
+                goto free_req;
+            }
+        } else if (!memcg_tmp) {
+            pr_warn("nucleus_split_migrater: hp %lx memcg not found\n", hp->address);
+            goto free_req;
+        } else if (!memcg_tmp->htmm_enabled) {
+            pr_warn("nucleus_split_migrater: hp %lx memcg not htmm enabled\n", hp->address);
+            goto free_req;
+        } else if (memcg_tmp != memcg) {
+            pr_warn("nucleus_split_migrater: hp %lx memcg not matching previously set memcg\n", hp->address);
+            goto free_req;
         }
         lruvec = mem_cgroup_page_lruvec(page);
         node_id = page_to_nid(page);
@@ -451,7 +473,6 @@ free_req:
 
         cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &demotion_list, lru) {
-            memcg = page_memcg(page);
             max_nr_pages = remote_pgdat->node_present_pages;
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {
@@ -476,7 +497,6 @@ free_req:
 
         cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &promotion_list, lru) {
-            memcg = page_memcg(page);
             max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
             compound_nr_page = compound_nr(page);
             if (cur_nr_pages == 0) {

@@ -102,6 +102,7 @@ static struct nucleus_hugepage *get_nucleus_hugepage(struct mm_struct *mm, unsig
 
 static void insert_to_nucleus_hugepages_hash(struct mm_struct *mm, unsigned long hp_vaddr, struct nucleus_hugepage *hp)
 {
+	mmgrab(mm);
 	hp->mm = mm;
 	hp->address = hp_vaddr;
 	hash_add(mm->nucleus_hugepages_hash, &hp->hash, hp_vaddr);
