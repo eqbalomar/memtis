@@ -4,12 +4,12 @@
 #define SPINPOLL // TODO: configure this
 #define SAMPLE_INTERVAL_MS 10
 #ifdef SPINPOLL
-#define EWMA_EXP 5
+#define EWMA_EXP 11
 #else
 #define EWMA_EXP 4
 #endif
 
-#define EWMA_EXP_PERF 5
+#define EWMA_EXP_PERF 11
 
 #define LOCAL_NUMA 1
 #define WORKER_BUDGET 1000000
