@@ -47,6 +47,11 @@ u64 smoothed_walk_completed;
 
 extern u64 nucleus_local_llc_misses;
 extern u64 nucleus_remote_llc_misses;
+extern u64 nucleus_local_llc_hits;
+extern u64 nucleus_remote_llc_hits;
+u64 smoothed_local_llc_hits;
+u64 smoothed_remote_llc_hits;
+u64 smoothed_llc_hits;
 u64 smoothed_local_llc_misses;
 u64 smoothed_remote_llc_misses;
 u64 smoothed_llc_misses;
@@ -134,7 +139,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
     // pr_info("nucleus thread_fun_poll_perf");
     int event, core;
     u32 budget = WORKER_BUDGET;
-    u64 t_lat_bp, t_lat_hp, curr_llc_misses;
+    u64 t_lat_bp, t_lat_hp, curr_llc_misses, cur_llc_hits;
     
     while (budget) {
         curr_tsc = rdtscp();
@@ -164,6 +169,12 @@ void thread_fun_poll_perf(struct work_struct *work) {
         curr_llc_misses = READ_ONCE(nucleus_remote_llc_misses);
         WRITE_ONCE(smoothed_remote_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_remote_llc_misses)>>EWMA_EXP_PERF);
         WRITE_ONCE(smoothed_llc_misses, smoothed_local_llc_misses + smoothed_remote_llc_misses);
+
+        cur_llc_hits = READ_ONCE(nucleus_local_llc_hits);
+        WRITE_ONCE(smoothed_local_llc_hits, (cur_llc_hits + ((1<<EWMA_EXP_PERF) - 1)*smoothed_local_llc_hits)>>EWMA_EXP_PERF);
+        cur_llc_hits = READ_ONCE(nucleus_remote_llc_hits);
+        WRITE_ONCE(smoothed_remote_llc_hits, (cur_llc_hits + ((1<<EWMA_EXP_PERF) - 1)*smoothed_remote_llc_hits)>>EWMA_EXP_PERF);
+        WRITE_ONCE(smoothed_llc_hits, smoothed_local_llc_hits + smoothed_remote_llc_hits);
 
         for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
             event_val_total[event] = 0;

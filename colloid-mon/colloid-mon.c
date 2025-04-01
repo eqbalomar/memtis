@@ -53,6 +53,9 @@ u64 p_lo, p_hi;
 u64 nucleus_local_llc_misses;
 u64 nucleus_remote_llc_misses;
 
+u64 nucleus_local_llc_hits;
+u64 nucleus_remote_llc_hits;
+
 static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
 
@@ -120,7 +123,7 @@ static void poll_cha_init(void) {
         }
 
         msr_num = CHA_MSR_PMON_CTL_BASE + (0xE * cha) + 2; // counter 2
-        msr_val = 0x400000; // CLOCKTICKS
+        msr_val = (cha%2==0)?(0x00c8168500400135):(0x00c8170500400135); // TOR Inserts, DRd, Hit, local/remote on even/odd CHA boxes
         ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
         if(ret != 0) {
             printk(KERN_ERR "wrmsr COUNTER 2 failed\n");
@@ -155,7 +158,7 @@ void thread_fun_poll_cha(struct work_struct *work) {
     #else
     u32 budget = 1;
     #endif
-    u64 cur_occ, cur_inserts, cur_llc_misses;
+    u64 cur_occ, cur_inserts, cur_llc_misses, cur_llc_hits;
     u64 cur_lat_local, cur_lat_remote;
     u64 abs_diff, cur_p, target_p, dlimit;
     
@@ -171,13 +174,17 @@ void thread_fun_poll_cha(struct work_struct *work) {
         // TODO: For starters using CHA0 for local and CHA1 for remote
         sample_cha_ctr(0, 0); // CHA0 occupancy
         sample_cha_ctr(0, 1); // CHA0 inserts
+        sample_cha_ctr(0, 2); // CHA0 hits
         sample_cha_ctr(1, 0);
         sample_cha_ctr(1, 1);
+        sample_cha_ctr(1, 2);
 
         cur_occ = cur_ctr_val[0][0] - prev_ctr_val[0][0];
         cur_inserts = cur_ctr_val[0][1] - prev_ctr_val[0][1];
         cur_llc_misses = cur_inserts * NUM_CHA_SLICES;
+        cur_llc_hits = cur_ctr_val[0][2] - prev_ctr_val[0][2];
         WRITE_ONCE(nucleus_local_llc_misses, cur_llc_misses);
+        WRITE_ONCE(nucleus_local_llc_hits, cur_llc_hits * NUM_CHA_SLICES);
         WRITE_ONCE(smoothed_occ_local, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_local)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_local, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_local)>>EWMA_EXP);
         cur_lat_local = MIN_LOCAL_LAT * LATENCY_PRECISION;
@@ -193,7 +200,9 @@ void thread_fun_poll_cha(struct work_struct *work) {
         cur_occ = cur_ctr_val[1][0] - prev_ctr_val[1][0];
         cur_inserts = cur_ctr_val[1][1] - prev_ctr_val[1][1];
         cur_llc_misses = cur_inserts * NUM_CHA_SLICES;
+        cur_llc_hits = cur_ctr_val[1][2] - prev_ctr_val[1][2];
         WRITE_ONCE(nucleus_remote_llc_misses, cur_llc_misses);
+        WRITE_ONCE(nucleus_remote_llc_hits, cur_llc_hits * NUM_CHA_SLICES);
         WRITE_ONCE(smoothed_occ_remote, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_remote)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_remote)>>EWMA_EXP);
         cur_lat_remote = MIN_REMOTE_LAT * LATENCY_PRECISION;
