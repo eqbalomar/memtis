@@ -1377,6 +1377,16 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	goto put_task;
     }
 
+#ifdef CONFIG_NUCLEUS
+	if (!mm->htmm_enabled) {
+		goto put_task;
+	}
+	mmgrab(mm);
+	memcg = get_mem_cgroup_from_mm(mm);
+    if (!memcg || !memcg->htmm_enabled) {
+		goto drop_mm;
+	}
+#else
     if (!mmap_read_trylock(mm)) {
 		if (event == DRAMREAD || event == CXLREAD || event == NVMREAD) {
 			WRITE_ONCE(nr_missed_samples, READ_ONCE(nr_missed_samples) + 1);
@@ -1391,10 +1401,11 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
     if (!vma->vm_mm || !vma_migratable(vma) ||
 	(vma->vm_file && (vma->vm_flags & (VM_READ | VM_WRITE)) == (VM_READ)))
 	goto mmap_unlock;
-    
+
     memcg = get_mem_cgroup_from_mm(mm);
     if (!memcg || !memcg->htmm_enabled)
 	goto mmap_unlock;
+#endif
 	
 #ifdef CONFIG_NUCLEUS
 	if (event == DRAMREAD) {
@@ -1413,6 +1424,9 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	memcg->nr_sampled_for_split++;
 	// memcg->nr_max_sampled++;
 	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
+
+drop_mm:
+	mmdrop(mm);
 #else
     /* increase sample counts only for valid records */
     ret = __update_pginfo(vma, address);
@@ -1430,8 +1444,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	WRITE_ONCE(memcg->nr_max_sampled, READ_ONCE(memcg->nr_max_sampled) + 1);
     } else
 	goto mmap_unlock;
-#endif
-    
+
     /* cooling and split decision */
     if (memcg->nr_sampled % htmm_cooling_period == 0 ||
 	    need_memcg_cooling(memcg)) {
@@ -1450,7 +1463,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 
 /* NUCLEUS: Disable split threshold determination */
 
-#ifndef CONFIG_NUCLEUS
+// #ifndef CONFIG_NUCLEUS
 
 	    /* split decision period */
 	    /* split should be performed after cooling due to skewness factor */
@@ -1492,7 +1505,7 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 		}
 	    }
 
-#endif
+// #endif
 	    printk("total_accesses: %lu max_dram_hits: %lu cur_hits: %lu \n",
 		    READ_ONCE(memcg->nr_max_sampled), memcg->prev_max_dram_sampled, memcg->prev_dram_sampled);
 	    // memcg->nr_max_sampled >>= 1;
@@ -1501,17 +1514,19 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
     }
 
 /* NUCLEUS: Disable active threshold determination */
-#ifndef CONFIG_NUCLEUS
+// #ifndef CONFIG_NUCLEUS
 
 	/* threshold adaptation */
     else if (memcg->nr_sampled % htmm_adaptation_period == 0) {
 	__adjust_active_threshold(mm, memcg);
     }
 
-#endif
+// #endif
 
 mmap_unlock:
     mmap_read_unlock(mm);
+#endif
+
 put_task:
     put_pid(pid_struct);
 }
