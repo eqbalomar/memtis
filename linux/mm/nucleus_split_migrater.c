@@ -360,14 +360,14 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
             if (memcg_tmp && memcg_tmp->htmm_enabled) {
                 memcg = memcg_tmp;
             } else if (!memcg_tmp) {
-                pr_warn("nucleus_split_migrater: hp %lx memcg not set and not found\n", hp->address);
+                // pr_warn("nucleus_split_migrater: hp %lx memcg not set and not found\n", hp->address);
                 goto free_req;
             } else {
                 pr_warn("nucleus_split_migrater: hp %lx memcg not set and not htmm enabled\n", hp->address);
                 goto free_req;
             }
         } else if (!memcg_tmp) {
-            pr_warn("nucleus_split_migrater: hp %lx memcg not found\n", hp->address);
+            // pr_warn("nucleus_split_migrater: hp %lx memcg not found\n", hp->address);
             goto free_req;
         } else if (!memcg_tmp->htmm_enabled) {
             pr_warn("nucleus_split_migrater: hp %lx memcg not htmm enabled\n", hp->address);
