@@ -6,6 +6,9 @@
 
 #define CORE_MON_PERF 61
 
+#define T_HP_FACTOR 300 // 300 -> 3
+#define T_BP_FACTOR 400 // 400 -> 4
+
 void thread_fun_poll_perf(struct work_struct *);
 struct workqueue_struct *poll_perf_queue;
 struct work_struct poll_perf;
@@ -207,15 +210,15 @@ void thread_fun_poll_perf(struct work_struct *work) {
         // WRITE_ONCE(smoothed_walk_completed_bp, (walk_completed_bp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_bp)>>EWMA_EXP_PERF);
         // WRITE_ONCE(smoothed_walk_completed, smoothed_walk_completed_hp + smoothed_walk_completed_bp);
 
-        t_lat_hp = 3 * smoothed_lat_local;
+        t_lat_hp = T_HP_FACTOR * smoothed_lat_local / 100;
         if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
-            t_lat_hp = (smoothed_walk_completed * 3 * smoothed_lat_local) / smoothed_llc_misses;
+            t_lat_hp = (smoothed_walk_completed * T_HP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
         }
         WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
 
-        t_lat_bp = 4 * smoothed_lat_local;
+        t_lat_bp = T_BP_FACTOR * smoothed_lat_local;
         if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
-            t_lat_bp = (smoothed_walk_completed * 4 * smoothed_lat_local) / smoothed_llc_misses;
+            t_lat_bp = (smoothed_walk_completed * T_BP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
         }
         WRITE_ONCE(smoothed_t_lat_bp, t_lat_bp);
 
