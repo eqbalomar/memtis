@@ -62,8 +62,13 @@ extern int terminate_mon;
 // extern unsigned long nucleus_loads_remote;
 extern unsigned long smoothed_lat_local;
 
+#ifdef MEASURE_FOR_MEMTIS
+unsigned long smoothed_t_lat_hp;
+unsigned long smoothed_t_lat_bp;
+#else
 extern unsigned long smoothed_t_lat_hp;
 extern unsigned long smoothed_t_lat_bp;
+#endif
 
 static struct perf_event **nucleus_mon_events[N_NUCLEUS_EVENTS];
 

@@ -10,10 +10,18 @@
 #include <linux/delay.h>
 #include "nucleus_measurement.h"
 
+#ifdef MEASURE_FOR_MEMTIS
+#define COLLOID_PRECISION 1000000000UL
+int colloid_local_lat_gt_remote;
+int colloid_nid_of_interest;
+unsigned long colloid_delta_p;
+unsigned long colloid_dynlimit;
+#else
 extern int colloid_local_lat_gt_remote;
 extern int colloid_nid_of_interest;
 extern unsigned long colloid_delta_p;
 extern unsigned long colloid_dynlimit;
+#endif
 
 int app_num_cores = 1;
 module_param(app_num_cores, int, 0);
@@ -59,8 +67,13 @@ u64 nucleus_remote_llc_hits;
 static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
 
+#ifdef MEASURE_FOR_MEMTIS
+unsigned long smoothed_lat_local;
+unsigned long smoothed_lat_remote;
+#else
 extern unsigned long smoothed_lat_local;
 extern unsigned long smoothed_lat_remote;
+#endif
 
 void thread_fun_poll_cha(struct work_struct *);
 struct workqueue_struct *poll_cha_queue;

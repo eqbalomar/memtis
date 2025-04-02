@@ -1,6 +1,8 @@
 #ifndef NUCLEUS_MEASUREMENT_H
 #define NUCLEUS_MEASUREMENT_H
 
+// #define MEASURE_FOR_MEMTIS
+
 #define SPINPOLL // TODO: configure this
 #define SAMPLE_INTERVAL_MS 10
 #ifdef SPINPOLL
