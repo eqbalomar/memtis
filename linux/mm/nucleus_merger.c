@@ -20,6 +20,9 @@ EXPORT_SYMBOL(nucleus_merge_wait);
 atomic_t nucleus_process_merge = ATOMIC_INIT(0);
 EXPORT_SYMBOL(nucleus_process_merge);
 
+unsigned long nucleus_nr_to_merge_in_def = 0;
+EXPORT_SYMBOL(nucleus_nr_to_merge_in_def);
+
 #define NUCLEUS_MERGER_TIMEOUT 5000 // 5 seconds
 
 static struct task_struct *knucleusmergerd = NULL;
@@ -42,7 +45,7 @@ static void check_and_demote_file_pages(void) {
     LIST_HEAD(demotion_list);
     LIST_HEAD(failed_demotion_list);
 
-    to_merge_in_def = atomic_read(&nucleus_process_merge);
+    to_merge_in_def = READ_ONCE(nucleus_nr_to_merge_in_def);
     local_pgdat = NODE_DATA(HTMM_CXL_LOCAL_NUMA);
 
     pn = next_memcg_cand(local_pgdat);
