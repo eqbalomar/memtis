@@ -28,11 +28,9 @@
 extern unsigned long core_local_loads[CPUS_PER_SOCKET];
 extern unsigned long core_remote_loads[CPUS_PER_SOCKET];
 
-unsigned long nucleus_loads_local = 0;
-EXPORT_SYMBOL(nucleus_loads_local);
-
-unsigned long nucleus_loads_remote = 0;
-EXPORT_SYMBOL(nucleus_loads_remote);
+extern unsigned long nucleus_loads_local;
+extern unsigned long nucleus_loads_remote;
+extern unsigned long nucleus_all_stores;
 
 extern unsigned long nr_missed_samples;
 
@@ -1232,8 +1230,8 @@ static bool __cooling(struct mm_struct *mm,
 	    spin_lock(&memcg->access_lock);
 	    WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
 	    spin_unlock(&memcg->access_lock);
-		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
-		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
+		// WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
+		// WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
 	    return false;
 	}
     }
@@ -1242,8 +1240,8 @@ static bool __cooling(struct mm_struct *mm,
 
     reset_memcg_stat(memcg); 
     WRITE_ONCE(memcg->cooling_clock, memcg->cooling_clock + 1);
-	WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
-	WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
+	// WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local)>>1);
+	// WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote)>>1);
     memcg->bp_active_threshold--;
     memcg->cooled = true;
     smp_mb();
@@ -1414,6 +1412,8 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 	} else if (event == CXLREAD || event == NVMREAD) {
 		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + 1);
 		WRITE_ONCE(core_remote_loads[cpu], READ_ONCE(core_remote_loads[cpu]) + 1);
+	} else if (event == MEMWRITE) {
+		WRITE_ONCE(nucleus_all_stores, READ_ONCE(nucleus_all_stores) + 1);
 	}
 	nucleus_update_access_freq_and_perform_cooling(memcg, mm, address);
 

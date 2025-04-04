@@ -24,6 +24,7 @@ struct nucleus_hugepage {
 	unsigned long algo_access_freq;
 	unsigned long algo_access_freq_to_move_in;
 	unsigned long algo_num_to_move_in;
+	unsigned long algo_num_to_move_in_initial;
 
 	// Output of algorithm
 	bool merge_in_hp;

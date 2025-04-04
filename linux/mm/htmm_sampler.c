@@ -18,6 +18,13 @@ struct task_struct *access_sampling = NULL;
 struct perf_event ***mem_event = NULL;
 int *cpus_in_socket = NULL;
 
+unsigned long nucleus_loads_local = 0;
+EXPORT_SYMBOL(nucleus_loads_local);
+unsigned long nucleus_loads_remote = 0;
+EXPORT_SYMBOL(nucleus_loads_remote);
+unsigned long nucleus_all_stores = 0;
+EXPORT_SYMBOL(nucleus_all_stores);
+
 unsigned long core_local_loads[CPUS_PER_SOCKET] = {0};
 EXPORT_SYMBOL(core_local_loads);
 unsigned long core_remote_loads[CPUS_PER_SOCKET] = {0};
@@ -238,6 +245,9 @@ static int ksamplingd(void *data)
     /* for analytic purpose */
     unsigned long hr_dram = 0, hr_nvm = 0;
 
+	WRITE_ONCE(nucleus_loads_local, 0);
+	WRITE_ONCE(nucleus_loads_remote, 0);
+	WRITE_ONCE(nucleus_all_stores, 0);
 	WRITE_ONCE(nr_missed_samples, 0);
 
 	memset(core_local_loads, 0, sizeof(core_local_loads));

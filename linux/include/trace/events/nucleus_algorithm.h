@@ -58,8 +58,8 @@ TRACE_EVENT(nucleus_access_freqs,
 
 TRACE_EVENT(nucleus_algorithm_inputs,
    TP_PROTO(unsigned long loads_local, unsigned long loads_remote, unsigned long lat_local, unsigned long lat_remote, unsigned long t_lat_hp, unsigned long t_lat_bp,
-   unsigned long hp_count, unsigned long nr_missed_samples),
-   TP_ARGS(loads_local, loads_remote, lat_local, lat_remote, t_lat_hp, t_lat_bp, hp_count, nr_missed_samples),
+   unsigned long hp_count, unsigned long nr_missed_samples, unsigned long all_stores),
+   TP_ARGS(loads_local, loads_remote, lat_local, lat_remote, t_lat_hp, t_lat_bp, hp_count, nr_missed_samples, all_stores),
    TP_STRUCT__entry(
       __field(unsigned long, loads_local)
       __field(unsigned long, loads_remote)
@@ -69,6 +69,7 @@ TRACE_EVENT(nucleus_algorithm_inputs,
       __field(unsigned long, t_lat_bp)
       __field(unsigned long, hp_count)
       __field(unsigned long, nr_missed_samples)
+      __field(unsigned long, all_stores)
    ),
    TP_fast_assign(
       __entry->loads_local = loads_local;
@@ -79,9 +80,10 @@ TRACE_EVENT(nucleus_algorithm_inputs,
       __entry->t_lat_bp = t_lat_bp;
       __entry->hp_count = hp_count;
       __entry->nr_missed_samples = nr_missed_samples;
+      __entry->all_stores = all_stores;
    ),
-   TP_printk("[nucleus_algorithm] loads_local=%lu, loads_remote=%lu, lat_local=%lu, lat_remote=%lu, t_lat_hp=%lu, t_lat_bp=%lu, hp_count=%lu, nr_missed_samples=%lu",
-      __entry->loads_local, __entry->loads_remote, __entry->lat_local, __entry->lat_remote, __entry->t_lat_hp, __entry->t_lat_bp, __entry->hp_count, __entry->nr_missed_samples)
+   TP_printk("[nucleus_algorithm] loads_local=%lu, loads_remote=%lu, lat_local=%lu, lat_remote=%lu, t_lat_hp=%lu, t_lat_bp=%lu, hp_count=%lu, nr_missed_samples=%lu, all_stores=%lu",
+      __entry->loads_local, __entry->loads_remote, __entry->lat_local, __entry->lat_remote, __entry->t_lat_hp, __entry->t_lat_bp, __entry->hp_count, __entry->nr_missed_samples, __entry->all_stores)
 )
 
 TRACE_EVENT(nucleus_core_loads,
@@ -98,6 +100,67 @@ TRACE_EVENT(nucleus_core_loads,
    TP_printk("[nucleus_algorithm] core_local_loads=%s, core_remote_loads=%s",
       __print_array(__entry->core_local_loads, 32, sizeof(unsigned long)),
       __print_array(__entry->core_remote_loads, 32, sizeof(unsigned long))
+   )
+);
+
+TRACE_EVENT(nucleus_algorithm_decision,
+   TP_PROTO(int iteration, unsigned long vaddr, unsigned long total_freq, unsigned long min_freq, unsigned long max_freq,
+      unsigned long nr_nonzero_bps, unsigned long nr_to_move_in, bool to_merge,
+      unsigned long nr_place_in_def, unsigned long nr_place_in_alt),
+   TP_ARGS(iteration, vaddr, total_freq, min_freq, max_freq, nr_nonzero_bps, nr_to_move_in, to_merge, nr_place_in_def, nr_place_in_alt),
+   TP_STRUCT__entry(
+      __field(int, iteration)
+      __field(unsigned long, vaddr)
+      __field(unsigned long, total_freq)
+      __field(unsigned long, min_freq)
+      __field(unsigned long, max_freq)
+      __field(unsigned long, nr_nonzero_bps)
+      __field(unsigned long, nr_to_move_in)
+      __field(bool, to_merge)
+      __field(unsigned long, nr_place_in_def)
+      __field(unsigned long, nr_place_in_alt)
+   ),
+   TP_fast_assign(
+      __entry->iteration = iteration;
+      __entry->vaddr = vaddr;
+      __entry->total_freq = total_freq;
+      __entry->min_freq = min_freq;
+      __entry->max_freq = max_freq;
+      __entry->nr_nonzero_bps = nr_nonzero_bps;
+      __entry->nr_to_move_in = nr_to_move_in;
+      __entry->to_merge = to_merge;
+      __entry->nr_place_in_def = nr_place_in_def;
+      __entry->nr_place_in_alt = nr_place_in_alt;
+   ),
+   TP_printk("[nucleus_algorithm] iteration=%d vaddr=%lu, total_freq=%lu, min_freq=%lu, max_freq=%lu, nr_nonzero_bps=%lu, nr_to_move_in=%lu, to_merge=%d, nr_place_in_def=%lu, nr_place_in_alt=%lu",
+      __entry->iteration, __entry->vaddr, __entry->total_freq, __entry->min_freq, __entry->max_freq,
+      __entry->nr_nonzero_bps, __entry->nr_to_move_in, __entry->to_merge,
+      __entry->nr_place_in_def, __entry->nr_place_in_alt)
+);
+
+TRACE_EVENT(nucleus_bp_access_freqs,
+   TP_PROTO(int iteration, unsigned long hp_vaddr, unsigned int *bp_index, unsigned long *bp_freq, bool *to_place_in_def),
+   TP_ARGS(iteration, hp_vaddr, bp_index, bp_freq, to_place_in_def),
+   TP_STRUCT__entry(
+      __field(int, iteration)
+      __field(unsigned long, hp_vaddr)
+      __array(unsigned int, bp_index, 16)
+      __array(unsigned long, bp_freq, 16)
+      __array(bool, to_place_in_def, 16)
+   ),
+   TP_fast_assign(
+      __entry->iteration = iteration;
+      __entry->hp_vaddr = hp_vaddr;
+      memcpy(__entry->bp_index, bp_index, sizeof(unsigned int) * 16);
+      memcpy(__entry->bp_freq, bp_freq, sizeof(unsigned long) * 16);
+      memcpy(__entry->to_place_in_def, to_place_in_def, sizeof(bool) * 16);
+   ),
+   TP_printk("[nucleus_algorithm] iteartion=%d hp_vaddr=%lu, bp_index=%s, bp_freq=%s, to_place_in_def=%s",
+      __entry->iteration,
+      __entry->hp_vaddr,
+      __print_array(__entry->bp_index, 16, sizeof(unsigned int)),
+      __print_array(__entry->bp_freq, 16, sizeof(unsigned long)),
+      __print_array(__entry->to_place_in_def, 16, sizeof(bool))
    )
 );
 
