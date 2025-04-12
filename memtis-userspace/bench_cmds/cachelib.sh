@@ -1,9 +1,9 @@
 #!/bin/bash
 
-BIN=/home/midhul/CacheLib/opt/cachelib/bin
-WORKLOAD=/home/midhul/colloid/workloads
-BENCH_RUN="taskset -c 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29 ${BIN}/cachebench --json_test_config ${WORKLOAD}/cachelib/hememkv/config.json --progress 1000"
-BENCH_DRAM="32000MB"
+BIN=/home/omar/CacheLib/opt/cachelib/bin
+WORKLOAD=/home/omar/colloid/workloads
+BENCH_RUN="taskset -c 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 ${BIN}/cachebench --json_test_config ${WORKLOAD}/cachelib/kvcache_reg/config2.json --progress 1"
+BENCH_DRAM="18000MB"
 
 # if [[ "x${NVM_RATIO}" == "x1:32" ]]; then
 #     BENCH_DRAM="1803MB"
