@@ -216,7 +216,7 @@ void thread_fun_poll_perf(struct work_struct *work) {
         }
         WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
 
-        t_lat_bp = T_BP_FACTOR * smoothed_lat_local;
+        t_lat_bp = T_BP_FACTOR * smoothed_lat_local / 100;
         if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
             t_lat_bp = (smoothed_walk_completed * T_BP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
         }
