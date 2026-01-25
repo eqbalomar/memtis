@@ -28,8 +28,8 @@ module_param(app_num_cores, int, 0);
 
 #define CORE_MON 63
 #define LOG_SIZE 10000
-#define MIN_LOCAL_LAT 15
-#define MIN_REMOTE_LAT 30
+#define MIN_LOCAL_LAT 70
+#define MIN_REMOTE_LAT 140
 #define OCC_PRECISION 1000000UL
 #define COLLOID_DELTA_PERCENT 5UL
 #define COLLOID_EPSILON_PERCENT 1UL
