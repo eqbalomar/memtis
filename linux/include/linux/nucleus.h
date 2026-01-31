@@ -110,6 +110,6 @@ void nucleus_merger_exit(void);
 /* nucleus_split_migrater.c */
 int nucleus_split_migrater_init(void);
 void nucleus_split_migrater_exit(void);
-unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file);
+unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list);
 
 #endif /* _LINUX_NUCLEUS_H */

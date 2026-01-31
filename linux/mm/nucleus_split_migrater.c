@@ -234,7 +234,7 @@ static __always_inline void update_lru_sizes(struct lruvec *lruvec, enum lru_lis
     }
 }
 
-unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list, unsigned long nr_to_demote_file)
+unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_list lru, struct list_head *demotion_list)
 {
     struct page *page, *page_tmp;
     unsigned long nr_pages, nr_taken_file = 0, nr_zone_taken[MAX_NR_ZONES] = {0};
@@ -242,9 +242,6 @@ unsigned long add_file_pages_to_demotion_list(struct lruvec *lruvec, enum lru_li
 
     spin_lock_irq(&lruvec->lru_lock);
     list_for_each_entry_safe(page, page_tmp, lru_list, lru) {
-        if (nr_taken_file >= nr_to_demote_file) {
-            break;
-        }
         if (!__isolate_lru_page_prepare(page, 0)) {
             continue;
         }
@@ -284,7 +281,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
     unsigned long hp_addr, bp_addr;
     int i, node_id, target_node;
     unsigned long nr_promoted, nr_to_promote = 0, total_promoted = 0;
-    unsigned long nr_demoted, nr_to_demote = 0, nr_to_demote_file = 0, total_demoted = 0;
+    unsigned long nr_demoted, nr_to_demote = 0, total_demoted = 0;
     unsigned long max_nr_pages, cur_nr_pages, compound_nr_page, new_nr_pages;
     LIST_HEAD(promotion_list);
     LIST_HEAD(demotion_list);
@@ -452,18 +449,12 @@ free_req:
     cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat) + cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
     new_nr_pages = cur_nr_pages + nr_to_promote - nr_to_demote;
     max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
-    if (new_nr_pages > CAPACITY_THRES * max_nr_pages / 100) {
-        nr_to_demote_file = new_nr_pages - CAPACITY_THRES * max_nr_pages / 100;
-        pr_info("nucleus_split_migrater: new_nr_pages exceeds cgroup limit, need to demote %lu file pages\n", nr_to_demote_file);
-        lruvec = mem_cgroup_lruvec(memcg, local_pgdat);
-        nr_taken_file = add_file_pages_to_demotion_list(lruvec, LRU_INACTIVE_FILE, &demotion_list, nr_to_demote_file);
-        nr_to_demote_file -= nr_taken_file;
-        if (nr_to_demote_file > 0) {
-            nr_taken_file += add_file_pages_to_demotion_list(lruvec, LRU_ACTIVE_FILE, &demotion_list, nr_to_demote_file);
-        }
-        cur_nr_taken[HTMM_CXL_LOCAL_NUMA] += nr_taken_file;
-        pr_info("nucleus_split_migrater: added %lu file pages to demotion list\n", nr_taken_file);
-    }
+    pr_info("nucleus_split_migrater: demoting file pages\n");
+    lruvec = mem_cgroup_lruvec(memcg, local_pgdat);
+    nr_taken_file = add_file_pages_to_demotion_list(lruvec, LRU_INACTIVE_FILE, &demotion_list);
+    nr_taken_file += add_file_pages_to_demotion_list(lruvec, LRU_ACTIVE_FILE, &demotion_list);
+    cur_nr_taken[HTMM_CXL_LOCAL_NUMA] += nr_taken_file;
+    pr_info("nucleus_split_migrater: added %lu file pages to demotion list\n", nr_taken_file);
 
     do {
         LIST_HEAD(cur_promotion_list);
