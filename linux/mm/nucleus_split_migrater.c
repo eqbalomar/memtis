@@ -282,7 +282,7 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
     int i, node_id, target_node;
     unsigned long nr_promoted, nr_to_promote = 0, total_promoted = 0;
     unsigned long nr_demoted, nr_to_demote = 0, total_demoted = 0;
-    unsigned long max_nr_pages, cur_nr_pages, compound_nr_page, new_nr_pages;
+    unsigned long compound_nr_page, max_to_migrate = 5000 * HPAGE_PMD_NR; // 5000 hugepages
     LIST_HEAD(promotion_list);
     LIST_HEAD(demotion_list);
     LIST_HEAD(failed_promotion_list);
@@ -408,10 +408,8 @@ static void migrate_hugepages_and_basepages(unsigned long *promoted, unsigned lo
         compound_nr_page = compound_nr(page);
         if (target_node == HTMM_CXL_LOCAL_NUMA) {
             list_move(&page->lru, &promotion_list);
-            nr_to_promote += compound_nr_page;
         } else {
             list_move(&page->lru, &demotion_list);
-            nr_to_demote += compound_nr_page;
         }
         // pr_info("nucleus_split_migrater: moved page to %d list\n", target_node);
         update_lru_size(lruvec, page_lru(page), page_zonenum(page), -compound_nr_page);
@@ -446,9 +444,6 @@ free_req:
         goto failed_migrations;
     }
 
-    cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat) + cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
-    new_nr_pages = cur_nr_pages + nr_to_promote - nr_to_demote;
-    max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
     pr_info("nucleus_split_migrater: demoting file pages\n");
     lruvec = mem_cgroup_lruvec(memcg, local_pgdat);
     nr_taken_file = add_file_pages_to_demotion_list(lruvec, LRU_INACTIVE_FILE, &demotion_list);
@@ -462,20 +457,12 @@ free_req:
         nr_to_promote = 0;
         nr_to_demote = 0;
 
-        cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &demotion_list, lru) {
-            max_nr_pages = remote_pgdat->node_present_pages;
-            compound_nr_page = compound_nr(page);
-            if (cur_nr_pages == 0) {
-                cur_nr_pages = get_nr_lru_pages_node(memcg, remote_pgdat);
-                cur_nr_pages += cur_nr_taken[HTMM_CXL_REMOTE_NUMA];
-                // pr_info("nucleus_split_migrater: remote node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
+            if (nr_to_demote >= max_to_migrate) {
+                break;
             }
-            if (cur_nr_pages + compound_nr_page <= CAPACITY_THRES * max_nr_pages / 100) {
-                list_move(&page->lru, &cur_demotion_list);
-                nr_to_demote += compound_nr_page;
-                cur_nr_pages += compound_nr_page;
-            }
+            list_move(&page->lru, &cur_demotion_list);
+            nr_to_demote += compound_nr(page);
         }
 
         nr_demoted = migrate_page_list_safe(&cur_demotion_list, local_pgdat, false);
@@ -484,22 +471,14 @@ free_req:
         if (!list_empty(&cur_demotion_list)) {
             list_splice_tail(&cur_demotion_list, &failed_demotion_list);
         }
-        // pr_info("nucleus_split_migrater: nr_to_demote %lu, nr_demoted %lu\n", nr_to_demote, nr_demoted);
+        // pr_info("nucleus_split_migrater: nr_demoted %lu\n", nr_demoted);
 
-        cur_nr_pages = 0;
         list_for_each_entry_safe(page, page_tmp, &promotion_list, lru) {
-            max_nr_pages = memcg->nodeinfo[HTMM_CXL_LOCAL_NUMA]->max_nr_base_pages;
-            compound_nr_page = compound_nr(page);
-            if (cur_nr_pages == 0) {
-                cur_nr_pages = get_nr_lru_pages_node(memcg, local_pgdat);
-                cur_nr_pages += cur_nr_taken[HTMM_CXL_LOCAL_NUMA];
-                // pr_info("nucleus_split_migrater: local node cur_nr_pages %lu max_nr_pages %lu compound_nr_page %lu\n", cur_nr_pages, max_nr_pages, compound_nr_page);
+            if (nr_to_promote >= max_to_migrate) {
+                break;
             }
-            if (cur_nr_pages + compound_nr_page <= CAPACITY_THRES * max_nr_pages / 100) {
-                list_move(&page->lru, &cur_promotion_list);
-                nr_to_promote += compound_nr_page;
-                cur_nr_pages += compound_nr_page;
-            }
+            list_move(&page->lru, &cur_promotion_list);
+            nr_to_promote += compound_nr(page);
         }
 
         nr_promoted = migrate_page_list_safe(&cur_promotion_list, remote_pgdat, true);
@@ -508,7 +487,7 @@ free_req:
         if (!list_empty(&cur_promotion_list)) {
             list_splice_tail(&cur_promotion_list, &failed_promotion_list);
         }
-        // pr_info("nucleus_split_migrater: nr_to_promote %lu, nr_promoted %lu\n", nr_to_promote, nr_promoted);
+        // pr_info("nucleus_split_migrater: nr_promoted %lu\n", nr_promoted);
     } while (nr_demoted > 0 || nr_promoted > 0);
 
     list_splice_tail(&failed_demotion_list, &demotion_list);
