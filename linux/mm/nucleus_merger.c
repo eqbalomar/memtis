@@ -8,28 +8,28 @@
 
 #include <trace/events/nucleus.h>
 
-struct deferred_nucleus_request_queue nucleus_merge_queue = {
-	.request_queue_lock = __SPIN_LOCK_UNLOCKED(nucleus_merge_queue.request_queue_lock),
-	.request_queue = LIST_HEAD_INIT(nucleus_merge_queue.request_queue),
-};
-EXPORT_SYMBOL(nucleus_merge_queue);
+struct deferred_nucleus_request_queue nucleus_merge_queues[NUM_MERGE_THREADS];
+EXPORT_SYMBOL(nucleus_merge_queues);
 
 DECLARE_WAIT_QUEUE_HEAD(nucleus_merge_wait);
 EXPORT_SYMBOL(nucleus_merge_wait);
 
-atomic_t nucleus_process_merge = ATOMIC_INIT(0);
+atomic_t nucleus_process_merge[NUM_MERGE_THREADS] = ATOMIC_INIT(0);
 EXPORT_SYMBOL(nucleus_process_merge);
+
+atomic_t nucleus_merge_queues_initialized = ATOMIC_INIT(0);
+EXPORT_SYMBOL(nucleus_merge_queues_initialized);
 
 unsigned long nucleus_nr_to_merge_in_def = 0;
 EXPORT_SYMBOL(nucleus_nr_to_merge_in_def);
 
 #define NUCLEUS_MERGER_TIMEOUT 5000 // 5 seconds
 
-static struct task_struct *knucleusmergerd = NULL;
+static struct task_struct *knucleusmergerd[NUM_MERGE_THREADS] = {NULL};
 
-static bool has_merge_requests(void)
+static bool has_merge_requests(int thread_id)
 {
-    if (atomic_read(&nucleus_process_merge) > 0) {
+    if (atomic_read(&nucleus_process_merge[thread_id]) > 0) {
         return true;
     }
     return false;
@@ -102,21 +102,23 @@ static int nucleus_merger(void *data)
     struct page *hpage;
 	int target_node, ret;
     unsigned long merged = 0, start_tsc, end_tsc, time_ms;
+    int thread_id = (int)(unsigned long)data;
+    pr_info("nucleus_merger[%d]: started\n", thread_id);
 
     while (!kthread_should_stop()) {
-        ret = wait_event_interruptible_timeout(nucleus_merge_wait, has_merge_requests(), msecs_to_jiffies(NUCLEUS_MERGER_TIMEOUT));
+        ret = wait_event_interruptible_timeout(nucleus_merge_wait, has_merge_requests(thread_id), msecs_to_jiffies(NUCLEUS_MERGER_TIMEOUT));
         if (ret == 0) {
             // pr_info("nucleus_merger: timeout\n");
             continue;
         }
-		pr_info("nucleus_merger: processing merge requests\n");
+		pr_info("nucleus_merger[%d]: processing merge requests\n", thread_id);
         start_tsc = rdtscp();
         merged = 0;
 
         check_and_demote_file_pages();
 
-		spin_lock_irqsave(&nucleus_merge_queue.request_queue_lock, flags);
-		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queue.request_queue, list) {
+		spin_lock_irqsave(&nucleus_merge_queues[thread_id].request_queue_lock, flags);
+		list_for_each_entry_safe(req, req_tmp, &nucleus_merge_queues[thread_id].request_queue, list) {
 			hp = req->hp;
 			target_node = req->target_node;
 			// pr_info("nucleus_merger: merge hp %lx in node %d\n", hp->address, target_node);
@@ -144,37 +146,47 @@ free_req:
 			list_del(&req->list);
 			kfree(req);
 		}
-		spin_unlock_irqrestore(&nucleus_merge_queue.request_queue_lock, flags);
+		spin_unlock_irqrestore(&nucleus_merge_queues[thread_id].request_queue_lock, flags);
         end_tsc = rdtscp();
         time_ms = (end_tsc - start_tsc) / cpu_khz;
         trace_nucleus_merge(merged, time_ms);
-		pr_info("nucleus_merger: processed merge requests, merged %lu pages\n", merged);
-        atomic_set(&nucleus_process_merge, 0);
+		pr_info("nucleus_merger[%d]: processed merge requests, merged %lu pages\n", thread_id, merged);
+        atomic_set(&nucleus_process_merge[thread_id], 0);
     }
+    pr_info("nucleus_merger[%d]: stopped\n", thread_id);
     return 0;
 }
 
 int nucleus_merger_init(void)
 {
-    int err = 0;
-    const struct cpumask *cpumask = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);
+    int err = 0, i;
+    const struct cpumask *cpumask_local = cpumask_of_node(HTMM_CXL_LOCAL_NUMA);
     pr_info("nucleus_merger: init\n");
-    knucleusmergerd = kthread_run(nucleus_merger, NULL, "knucleusmergerd");
-    if (IS_ERR(knucleusmergerd)) {
-        pr_err("nucleus_merger: failed to create kernel thread\n");
-        err = PTR_ERR(knucleusmergerd);
-        knucleusmergerd = NULL;
-    } else {
-        set_cpus_allowed_ptr(knucleusmergerd, cpumask);
+    for (i = 0; i < NUM_MERGE_THREADS; i++) {
+        spin_lock_init(&nucleus_merge_queues[i].request_queue_lock);
+        INIT_LIST_HEAD(&nucleus_merge_queues[i].request_queue);
+        knucleusmergerd[i] = kthread_run(nucleus_merger, (void *)(unsigned long)i, "knucleusmergerd");
+        if (IS_ERR(knucleusmergerd[i])) {
+            pr_err("nucleus_merger: failed to create kernel thread\n");
+            err = PTR_ERR(knucleusmergerd[i]);
+            knucleusmergerd[i] = NULL;
+        } else {
+            set_cpus_allowed_ptr(knucleusmergerd[i], cpumask_local);
+        }
     }
+    atomic_set(&nucleus_merge_queues_initialized, 1);
     return err;
 }
 
 void nucleus_merger_exit(void)
 {
-    if (knucleusmergerd) {
-	    kthread_stop(knucleusmergerd);
-        knucleusmergerd = NULL;
-	}
+    int i;
+    atomic_set(&nucleus_merge_queues_initialized, 0);
+    for (i = 0; i < NUM_MERGE_THREADS; i++) {
+        if (knucleusmergerd[i]) {
+            kthread_stop(knucleusmergerd[i]);
+            knucleusmergerd[i] = NULL;
+        }
+    }
     pr_info("nucleus_merger: exit\n");
 }
