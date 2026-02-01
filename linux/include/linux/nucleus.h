@@ -8,6 +8,7 @@
 #define CAPACITY_THRES 95
 
 #define NUM_MERGE_THREADS 2
+#define NUM_SPLIT_MIGRATE_THREADS 2
 
 struct nucleus_hugepage {
 	atomic_t ref_count;
