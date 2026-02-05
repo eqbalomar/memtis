@@ -5,7 +5,6 @@
 #include <linux/mm_types.h>
 
 #define ACCESS_FREQ_PRECISION 10000ULL
-#define CAPACITY_THRES 95
 
 #define NUM_MERGE_THREADS 2
 #define NUM_SPLIT_MIGRATE_THREADS 2
