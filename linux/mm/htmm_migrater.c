@@ -19,6 +19,8 @@
 
 #include "internal.h"
 
+// #define DISABLE_HTMM_MIGRATION
+
 #define MIN_WATERMARK_LOWER_LIMIT   128 * 100 // 50MB
 #define MIN_WATERMARK_UPPER_LIMIT   2560 * 100 // 1000MB
 #define MAX_WATERMARK_LOWER_LIMIT   256 * 100 // 100MB
@@ -985,9 +987,13 @@ static int kmigraterd_demotion(pg_data_t *pgdat)
 	}
 	
 	/* demotes inactive lru pages */
+#ifndef DISABLE_HTMM_MIGRATION
 	if (need_toptier_demotion(pgdat, memcg, &nr_exceeded)) {
 	    demote_node(pgdat, memcg, nr_exceeded);
 	}
+#else
+	WRITE_ONCE(memcg->nodeinfo[pgdat->node_id]->need_demotion, false);
+#endif
 	//if (need_direct_demotion(pgdat, memcg))
 	  //  goto demotion;
 
@@ -1053,9 +1059,11 @@ static int kmigraterd_promotion(pg_data_t *pgdat)
 	}
 
 	/* promotes hot pages to fast memory node */
+#ifndef DISABLE_HTMM_MIGRATION
 	if (need_lowertier_promotion(pgdat, memcg)) {
 	    promote_node(pgdat, memcg);
 	}
+#endif
 
 	msleep_interruptible(htmm_promotion_period_in_ms);
     }
