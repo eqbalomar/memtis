@@ -17,6 +17,9 @@ struct task_struct *access_sampling = NULL;
 struct perf_event ***mem_event = NULL;
 int *cpus_in_socket = NULL;
 
+unsigned long current_sample_period = 0;
+EXPORT_SYMBOL(current_sample_period);
+
 static bool valid_va(unsigned long addr)
 {
     if (!(addr >> (PGDIR_SHIFT + 9)) && addr != 0)
@@ -214,6 +217,7 @@ static int ksamplingd(void *data)
     /* used for periodic checks*/
     unsigned long cpucap_period = msecs_to_jiffies(15000); // 15s
     unsigned long sample_period = 0;
+	WRITE_ONCE(current_sample_period, READ_ONCE(htmm_sample_period));
     unsigned long sample_inst_period = 0;
     /* report cpu/period stat */
     unsigned long trace_cputime, trace_period = msecs_to_jiffies(1500); // 3s
@@ -367,15 +371,19 @@ static int ksamplingd(void *data)
 		/* only increase by 1 */
 		unsigned long tmp1 = sample_period, tmp2 = sample_inst_period;
 		increase_sample_period(&sample_period, &sample_inst_period);
-		if (tmp1 != sample_period || tmp2 != sample_inst_period)
+		if (tmp1 != sample_period || tmp2 != sample_inst_period) {
 		    pebs_update_period(get_sample_period(sample_period),
 				       get_sample_inst_period(sample_inst_period));
+			WRITE_ONCE(current_sample_period, get_sample_period(sample_period));
+		}
 	    } else if (cputime < (ksampled_soft_cpu_quota - 5) && sample_period) {
 		unsigned long tmp1 = sample_period, tmp2 = sample_inst_period;
 		decrease_sample_period(&sample_period, &sample_inst_period);
-		if (tmp1 != sample_period || tmp2 != sample_inst_period)
+		if (tmp1 != sample_period || tmp2 != sample_inst_period) {
 		    pebs_update_period(get_sample_period(sample_period),
 				    get_sample_inst_period(sample_inst_period));
+			WRITE_ONCE(current_sample_period, get_sample_period(sample_period));
+		}
 	    }
 	    /* does it need to prevent ping-pong behavior? */
 	    
