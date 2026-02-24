@@ -201,7 +201,7 @@ void thread_fun_poll_cha(struct work_struct *work) {
         WRITE_ONCE(smoothed_occ_local, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_local)>>EWMA_EXP);
         WRITE_ONCE(smoothed_inserts_local, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_local)>>EWMA_EXP);
         cur_lat_local = MIN_LOCAL_LAT * LATENCY_PRECISION;
-        if (smoothed_inserts_local > 0) {
+        if (smoothed_inserts_local > 1000) {
             cur_lat_local = (smoothed_occ_local * LATENCY_PRECISION) / smoothed_inserts_local;
             cur_lat_local = (cur_lat_local * N_SEC) / CHA_FREQ;
         }
