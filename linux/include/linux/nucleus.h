@@ -6,8 +6,8 @@
 
 #define ACCESS_FREQ_PRECISION 10000ULL
 
-#define NUM_MERGE_THREADS 2
-#define NUM_SPLIT_MIGRATE_THREADS 2
+#define NUM_MERGE_THREADS 1
+#define NUM_SPLIT_MIGRATE_THREADS 1
 
 struct nucleus_hugepage {
 	atomic_t ref_count;
