@@ -39,6 +39,7 @@
 #ifdef CONFIG_NUCLEUS
 #include <linux/mempolicy.h>
 #include <linux/nucleus.h>
+#include <linux/delay.h>
 #endif
 
 #include <asm/tlb.h>
@@ -2837,6 +2838,10 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 
 	/* Prevent deferred_split_scan() touching ->_refcount */
 	spin_lock(&ds_queue->split_queue_lock);
+#ifdef CONFIG_NUCLEUS
+	// page_ref_freeze fails due to ref count being transiently modified by some other thread.
+	udelay(10);
+#endif
 	// pr_info("split_huge_page_to_list: trying to freeze refcount\n");
 	// pr_info("split_huge_page_to_list: trying to freeze refcount, total_mapcount=%d, page_count=%d, page_ref_count=%d, extra_pins=%d\n", total_mapcount(head), page_count(head), page_ref_count(head), extra_pins);
 	if (page_ref_freeze(head, 1 + extra_pins)) {
