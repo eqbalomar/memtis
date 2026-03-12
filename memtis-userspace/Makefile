@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall -O3
 
 DIR = bin
-default: $(DIR) launch_bench launch_bench_nopid kill_ksampled
+default: $(DIR) launch_bench launch_bench_nopid kill_ksampled kill_kmigraterd
 
 $(DIR):
 	mkdir -p $@
@@ -16,5 +16,8 @@ launch_bench: launch_bench.c
 kill_ksampled: kill_ksampled.c
 	${CC} ${CFLAGS} kill_ksampled.c -o ${DIR}/kill_ksampled
 
+kill_kmigraterd: kill_kmigraterd.c
+	${CC} ${CFLAGS} kill_kmigraterd.c -o ${DIR}/kill_kmigraterd
+
 clean:
-	rm ${DIR}/launch_bench ${DIR}/launch_bench_nopid ${DIR}/kill_ksampled
+	rm ${DIR}/launch_bench ${DIR}/launch_bench_nopid ${DIR}/kill_ksampled ${DIR}/kill_kmigraterd
