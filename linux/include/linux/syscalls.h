@@ -947,6 +947,8 @@ asmlinkage long sys_perf_event_open(
 /* CONFIG_HTMM */
 asmlinkage long sys_htmm_start(pid_t pid, int node);
 asmlinkage long sys_htmm_end(pid_t pid);
+asmlinkage long sys_htmm_migrater_start(void);
+asmlinkage long sys_htmm_migrater_end(void);
 /***************/
 asmlinkage long sys_accept4(int, struct sockaddr __user *, int __user *, int);
 asmlinkage long sys_recvmmsg(int fd, struct mmsghdr __user *msg,

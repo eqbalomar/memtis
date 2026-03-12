@@ -12526,6 +12526,16 @@ SYSCALL_DEFINE1(htmm_end,
     return 0;
 }
 
+SYSCALL_DEFINE0(htmm_migrater_start)
+{
+    return 0;
+}
+
+SYSCALL_DEFINE0(htmm_migrater_end)
+{
+    return 0;
+}
+
 #else
 SYSCALL_DEFINE2(htmm_start,
 		pid_t, pid, int, node)
@@ -12538,6 +12548,18 @@ SYSCALL_DEFINE1(htmm_end,
 		pid_t, pid)
 {
     ksamplingd_exit();
+    return 0;
+}
+
+SYSCALL_DEFINE0(htmm_migrater_start)
+{
+	kmigraterd_init();
+    return 0;
+}
+
+SYSCALL_DEFINE0(htmm_migrater_end)
+{
+	kmigraterd_stop();
     return 0;
 }
 
