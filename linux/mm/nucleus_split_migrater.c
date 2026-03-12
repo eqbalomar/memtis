@@ -100,7 +100,7 @@ static unsigned long split_hugepages(int thread_id)
     pmd_t *pmd;
     unsigned long hp_addr;
     unsigned long split = 0;
-    int i, node_id;
+    int i, node_id, ret;
     bool skip_iso;
     for (i = 0; i < NUM_NUMA_NODES; i++) {
         INIT_LIST_HEAD(&split_lists[i]);
@@ -156,6 +156,7 @@ static unsigned long split_hugepages(int thread_id)
         }
 
         if (!PageLRU(page)) {
+            // pr_info("nucleus_split_migrater: hp %lx not on LRU\n", hp->address);
             skip_iso = true;
             goto skip_isolation;
         }
@@ -183,19 +184,24 @@ static unsigned long split_hugepages(int thread_id)
 
 skip_isolation:
         if (skip_iso) {
+            // pr_info("nucleus_split_migrater: skipping isolation for hp %lx\n", hp->address);
             if (page->lru.next != LIST_POISON1 || page->lru.prev != LIST_POISON2) {
+                // pr_info("nucleus_split_migrater: hp %lx page lru not poisoned, cannot skip isolation\n", hp->address);
                 goto free_req;
             }
+            // pr_info("nucleus_split_migrater: skipping isolation for hp %lx, adding to tmp list\n", hp->address);
             list_add(&page->lru, &tmp);
         }
 
         lock_page(page);
 
-        if (!split_huge_page_to_list(page, &tmp)) {
+        ret = split_huge_page_to_list(page, &tmp);
+        if (ret == 0) {
             split++;
             list_splice(&tmp, &split_lists[node_id]);
         } else {
             check_failed_list(&tmp, &failed_list);
+            pr_info("nucleus_split_migrater[%d]: split_huge_page_to_list failed for hp %lx, ret %d\n", thread_id, hp->address, ret);
         }
 
         unlock_page(page);

@@ -476,6 +476,13 @@ skip_isolation:
 	    continue;
 	}
 
+#ifdef CONFIG_NUCLEUS
+	struct mem_cgroup *memcg = page_memcg(page);
+	if (memcg && memcg->htmm_enabled) {
+		pr_warn("deferred_split_scan_for_htmm: trying to split page with htmm memcg\n");
+	}
+#endif
+
 	if (!split_huge_page_to_list(page, &tmp)) {
 	    split++;
 	    list_splice(&tmp, split_list);

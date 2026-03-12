@@ -2837,6 +2837,8 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 
 	/* Prevent deferred_split_scan() touching ->_refcount */
 	spin_lock(&ds_queue->split_queue_lock);
+	// pr_info("split_huge_page_to_list: trying to freeze refcount\n");
+	// pr_info("split_huge_page_to_list: trying to freeze refcount, total_mapcount=%d, page_count=%d, page_ref_count=%d, extra_pins=%d\n", total_mapcount(head), page_count(head), page_ref_count(head), extra_pins);
 	if (page_ref_freeze(head, 1 + extra_pins)) {
 		if (!list_empty(page_deferred_list(head))) {
 			ds_queue->split_queue_len--;
@@ -2879,6 +2881,8 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
 		ret = 0;
 	} else {
 		spin_unlock(&ds_queue->split_queue_lock);
+		// pr_info("split_huge_page_to_list: cannot freeze refcount\n");
+		// pr_info("split_huge_page_to_list: cannot freeze refcount, total_mapcount=%d, page_count=%d, page_ref_count=%d, extra_pins=%d\n", total_mapcount(head), page_count(head), page_ref_count(head), extra_pins);
 fail:
 		if (mapping)
 			xa_unlock(&mapping->i_pages);
@@ -3018,6 +3022,12 @@ static unsigned long deferred_split_scan(struct shrinker *shrink,
 		spin_unlock_irqrestore(&pn_ds_queue->split_queue_lock, flags);
 		    list_for_each_safe(pos, next, &list) {
 			page = list_entry((void *)pos, struct page, deferred_list);
+#ifdef CONFIG_NUCLEUS
+			struct mem_cgroup *memcg = page_memcg(page);
+			if (memcg && memcg->htmm_enabled) {
+				pr_warn("deferred_split_scan: trying to split page with htmm memcg\n");
+			}
+#endif
 			if (!trylock_page(page))
 			    goto next;
 			/* split_huge_page() removes page from list on success */

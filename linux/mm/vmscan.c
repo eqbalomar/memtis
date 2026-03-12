@@ -1558,6 +1558,12 @@ retry:
 					 * away. Chances are some or all of the
 					 * tail pages can be freed without IO.
 					 */
+#ifdef CONFIG_NUCLEUS
+					struct mem_cgroup *memcg = page_memcg(page);
+					if (memcg && memcg->htmm_enabled) {
+						pr_warn("shrink_page_list: 1 trying to split page with htmm memcg\n");
+					}
+#endif
 					if (!compound_mapcount(page) &&
 					    split_huge_page_to_list(page,
 								    page_list))
@@ -1567,6 +1573,12 @@ retry:
 					if (!PageTransHuge(page))
 						goto activate_locked_split;
 					/* Fallback to swap normal pages */
+#ifdef CONFIG_NUCLEUS
+					struct mem_cgroup *memcg = page_memcg(page);
+					if (memcg && memcg->htmm_enabled) {
+						pr_warn("shrink_page_list: 2 trying to split page with htmm memcg\n");
+					}
+#endif
 					if (split_huge_page_to_list(page,
 								    page_list))
 						goto activate_locked;
@@ -1584,6 +1596,12 @@ retry:
 			}
 		} else if (unlikely(PageTransHuge(page))) {
 			/* Split file THP */
+#ifdef CONFIG_NUCLEUS
+			struct mem_cgroup *memcg = page_memcg(page);
+			if (memcg && memcg->htmm_enabled) {
+				pr_warn("shrink_page_list: 3 trying to split page with htmm memcg\n");
+			}
+#endif
 			if (split_huge_page_to_list(page, page_list))
 				goto keep_locked;
 		}
