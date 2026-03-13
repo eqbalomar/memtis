@@ -23,7 +23,7 @@ extern unsigned long colloid_delta_p;
 extern unsigned long colloid_dynlimit;
 #endif
 
-int app_num_cores = 1;
+int app_num_cores = 16;
 module_param(app_num_cores, int, 0);
 
 #define CORE_MON 63
@@ -59,10 +59,14 @@ u64 smoothed_occ_local, smoothed_inserts_local;
 u64 smoothed_occ_remote, smoothed_inserts_remote;
 u64 p_lo, p_hi;
 u64 nucleus_local_llc_misses;
+EXPORT_SYMBOL(nucleus_local_llc_misses);
 u64 nucleus_remote_llc_misses;
+EXPORT_SYMBOL(nucleus_remote_llc_misses);
 
 u64 nucleus_local_llc_hits;
+EXPORT_SYMBOL(nucleus_local_llc_hits);
 u64 nucleus_remote_llc_hits;
+EXPORT_SYMBOL(nucleus_remote_llc_hits);
 
 static u64 prev_tsc = 0;
 static u64 curr_tsc = 0;
@@ -318,7 +322,7 @@ static int colloidmon_init(void)
     INIT_DELAYED_WORK(&poll_cha, thread_fun_poll_cha);
     #endif
     poll_cha_init();
-    pr_info("Programmed counters");
+    pr_info("Programmed counters, app_num_cores %d\n", app_num_cores);
     // Initialize state
     init_mon_state();
     WRITE_ONCE(terminate_mon, 0);
@@ -330,7 +334,7 @@ static int colloidmon_init(void)
 
     WRITE_ONCE(colloid_nid_of_interest, LOCAL_NUMA);
 
-    nucleus_measurement_init();
+    // nucleus_measurement_init();
 
     int i;
     for(i = 0; i < 5; i++) {
@@ -348,11 +352,11 @@ static void colloidmon_exit(void)
     flush_workqueue(poll_cha_queue);
     destroy_workqueue(poll_cha_queue);
 
-    nucleus_measurement_exit();
+    // nucleus_measurement_exit();
 
     // dump_log();
 
-    pr_info("colloidmon exit");
+    pr_info("colloidmon exit\n");
 }
  
 module_init(colloidmon_init);

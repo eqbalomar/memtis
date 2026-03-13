@@ -10,7 +10,7 @@
 #define T_BP_FACTOR 400 // 400 -> 4
 
 void thread_fun_poll_perf(struct work_struct *);
-struct workqueue_struct *poll_perf_queue;
+struct workqueue_struct *poll_perf_queue = NULL;
 struct work_struct poll_perf;
 
 extern int app_num_cores;
@@ -234,7 +234,11 @@ void thread_fun_poll_perf(struct work_struct *work) {
 int nucleus_measurement_init(void)
 {
     int event;
-    pr_info("nucleus_mon: measurement init");
+    pr_info("nucleus_mon: measurement init\n");
+    if (poll_perf_queue) {
+        pr_info("nucleus_mon: poll perf queue already initialized\n");
+        return 0;
+    }
     poll_perf_queue = alloc_workqueue("poll_perf_queue",  WQ_HIGHPRI | WQ_CPU_INTENSIVE, 0);
     if (!poll_perf_queue) {
         pr_err("nucleus_mon: failed to create Perf workqueue\n");
@@ -261,11 +265,15 @@ int nucleus_measurement_init(void)
 
     return 0;
 }
- 
+
 void nucleus_measurement_exit(void)
 {
     int event, core;
-    pr_info("nucleus_mon: measurement exit");
+    pr_info("nucleus_mon: measurement exit\n");
+    if (!poll_perf_queue) {
+        pr_info("nucleus_mon: poll perf queue already freed\n");
+        return;
+    }
 
     for (event = 0; event < N_NUCLEUS_EVENTS; event++) {
         for (core = 0; core < app_num_cores; core++) {
@@ -279,4 +287,5 @@ void nucleus_measurement_exit(void)
 
     flush_workqueue(poll_perf_queue);
     destroy_workqueue(poll_perf_queue);
+    poll_perf_queue = NULL;
 }
