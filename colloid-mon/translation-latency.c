@@ -32,25 +32,21 @@ static u64 curr_tsc = 0;
 
 u64 walk_completed;
 u64 smoothed_walk_completed;
-u64 perf_llc_misses;
-u64 smoothed_perf_llc_misses;
 
 // u64 prev_loads;
 // u64 curr_loads;
 // u64 all_loads;
 // u64 smoothed_all_loads;
 
-u64 prev_loads_local_misses_pebs;
-u64 curr_loads_local_misses_pebs;
-u64 loads_local_misses_pebs;
-u64 smoothed_loads_local_misses_pebs;
+// u64 prev_loads_local;
+// u64 curr_loads_local;
+// u64 loads_local;
+// u64 smoothed_loads_local;
 
-u64 prev_loads_remote_misses_pebs;
-u64 curr_loads_remote_misses_pebs;
-u64 loads_remote_misses_pebs;
-u64 smoothed_loads_remote_misses_pebs;
-
-u64 smoothed_loads_misses_pebs;
+// u64 prev_loads_remote;
+// u64 curr_loads_remote;
+// u64 loads_remote;
+// u64 smoothed_loads_remote;
 
 extern u64 nucleus_local_llc_misses;
 extern u64 nucleus_remote_llc_misses;
@@ -65,8 +61,8 @@ u64 smoothed_llc_misses;
 
 extern int terminate_mon;
 // extern unsigned long nucleus_all_loads;
-extern unsigned long nucleus_loads_local;
-extern unsigned long nucleus_loads_remote;
+// extern unsigned long nucleus_loads_local;
+// extern unsigned long nucleus_loads_remote;
 extern unsigned long smoothed_lat_local;
 
 #ifdef MEASURE_FOR_MEMTIS
@@ -87,8 +83,6 @@ static unsigned long get_perf_event_config(enum nucleus_events e) {
         //     return WALK_COMPLETED_HP;
         // case WALK_COMPLETED_EVENT_BP:
         //     return WALK_COMPLETED_BP;
-        case L3_MISS_EVENT:
-            return MEM_LOAD_RETIRED_L3_MISS;
         default:
             return N_NUCLEUS_EVENTS;
     }
@@ -168,17 +162,15 @@ void thread_fun_poll_perf(struct work_struct *work) {
         // WRITE_ONCE(smoothed_all_loads, (all_loads + ((1<<EWMA_EXP_PERF) - 1)*smoothed_all_loads)>>EWMA_EXP_PERF);
         // prev_loads = curr_loads;
 
-        curr_loads_local_misses_pebs = READ_ONCE(nucleus_loads_local);
-        WRITE_ONCE(loads_local_misses_pebs, curr_loads_local_misses_pebs - prev_loads_local_misses_pebs);
-        WRITE_ONCE(smoothed_loads_local_misses_pebs, (loads_local_misses_pebs + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_local_misses_pebs)>>EWMA_EXP_PERF);
-        prev_loads_local_misses_pebs = curr_loads_local_misses_pebs;
+        // curr_loads_local = READ_ONCE(nucleus_loads_local);
+        // WRITE_ONCE(loads_local, curr_loads_local - prev_loads_local);
+        // WRITE_ONCE(smoothed_loads_local, (loads_local + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_local)>>EWMA_EXP_PERF);
+        // prev_loads_local = curr_loads_local;
 
-        curr_loads_remote_misses_pebs = READ_ONCE(nucleus_loads_remote);
-        WRITE_ONCE(loads_remote_misses_pebs, curr_loads_remote_misses_pebs - prev_loads_remote_misses_pebs);
-        WRITE_ONCE(smoothed_loads_remote_misses_pebs, (loads_remote_misses_pebs + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote_misses_pebs)>>EWMA_EXP_PERF);
-        prev_loads_remote_misses_pebs = curr_loads_remote_misses_pebs;
-
-        WRITE_ONCE(smoothed_loads_misses_pebs, smoothed_loads_local_misses_pebs + smoothed_loads_remote_misses_pebs);
+        // curr_loads_remote = READ_ONCE(nucleus_loads_remote);
+        // WRITE_ONCE(loads_remote, curr_loads_remote - prev_loads_remote);
+        // WRITE_ONCE(smoothed_loads_remote, (loads_remote + ((1<<EWMA_EXP_PERF) - 1)*smoothed_loads_remote)>>EWMA_EXP_PERF);
+        // prev_loads_remote = curr_loads_remote;
 
         curr_llc_misses = READ_ONCE(nucleus_local_llc_misses);
         WRITE_ONCE(smoothed_local_llc_misses, (curr_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_local_llc_misses)>>EWMA_EXP_PERF);
@@ -205,8 +197,6 @@ void thread_fun_poll_perf(struct work_struct *work) {
             // pr_info("nucleus_mon: event %d, total %llu", event, event_val_total[event]);
             if (event == WALK_COMPLETED_EVENT) {
                 WRITE_ONCE(walk_completed, event_val_total[event]);
-            } else if (event == L3_MISS_EVENT) {
-                WRITE_ONCE(perf_llc_misses, event_val_total[event]);
             }
             // if (event == WALK_COMPLETED_EVENT_HP) {
             //     WRITE_ONCE(walk_completed_hp, event_val_total[event]);
@@ -216,32 +206,19 @@ void thread_fun_poll_perf(struct work_struct *work) {
         }
 
         WRITE_ONCE(smoothed_walk_completed, (walk_completed + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed)>>EWMA_EXP_PERF);
-        WRITE_ONCE(smoothed_perf_llc_misses, (perf_llc_misses + ((1<<EWMA_EXP_PERF) - 1)*smoothed_perf_llc_misses)>>EWMA_EXP_PERF);
         // WRITE_ONCE(smoothed_walk_completed_hp, (walk_completed_hp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_hp)>>EWMA_EXP_PERF);
         // WRITE_ONCE(smoothed_walk_completed_bp, (walk_completed_bp + ((1<<EWMA_EXP_PERF) - 1)*smoothed_walk_completed_bp)>>EWMA_EXP_PERF);
         // WRITE_ONCE(smoothed_walk_completed, smoothed_walk_completed_hp + smoothed_walk_completed_bp);
 
-        // t_lat_hp = T_HP_FACTOR * smoothed_lat_local / 100;
-        // if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
-        //     t_lat_hp = (smoothed_walk_completed * T_HP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
-        // }
-        // WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
-
-        // t_lat_bp = T_BP_FACTOR * smoothed_lat_local / 100;
-        // if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
-        //     t_lat_bp = (smoothed_walk_completed * T_BP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
-        // }
-        // WRITE_ONCE(smoothed_t_lat_bp, t_lat_bp);
-
         t_lat_hp = T_HP_FACTOR * smoothed_lat_local / 100;
-        if (smoothed_perf_llc_misses > 0 && smoothed_walk_completed < smoothed_perf_llc_misses) {
-            t_lat_hp = (smoothed_walk_completed * T_HP_FACTOR * smoothed_lat_local) / (smoothed_perf_llc_misses * 100);
+        if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
+            t_lat_hp = (smoothed_walk_completed * T_HP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
         }
         WRITE_ONCE(smoothed_t_lat_hp, t_lat_hp);
 
         t_lat_bp = T_BP_FACTOR * smoothed_lat_local / 100;
-        if (smoothed_perf_llc_misses > 0 && smoothed_walk_completed < smoothed_perf_llc_misses) {
-            t_lat_bp = (smoothed_walk_completed * T_BP_FACTOR * smoothed_lat_local) / (smoothed_perf_llc_misses * 100);
+        if (smoothed_llc_misses > 0 && smoothed_walk_completed < smoothed_llc_misses) {
+            t_lat_bp = (smoothed_walk_completed * T_BP_FACTOR * smoothed_lat_local) / (smoothed_llc_misses * 100);
         }
         WRITE_ONCE(smoothed_t_lat_bp, t_lat_bp);
 
