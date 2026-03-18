@@ -54,8 +54,10 @@ static __u64 get_pebs_event(enum events e)
 		return NVM_LLC_LOAD_MISS;
 	    else
 		return N_HTMMEVENTS;
+#ifndef CONFIG_NUCLEUS
 	case MEMWRITE:
 	    return ALL_STORES;
+#endif
 	case CXLREAD:
 	    if (htmm_cxl_mode)
 		return REMOTE_DRAM_LLC_LOAD_MISS;

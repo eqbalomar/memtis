@@ -1413,12 +1413,13 @@ void update_pginfo(pid_t pid, unsigned long address, enum events event, unsigned
 #endif
 	
 #ifdef CONFIG_NUCLEUS
+	unsigned long num_samples = get_sample_period(sample_period);
 	if (event == DRAMREAD) {
-		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + 1);
-		WRITE_ONCE(core_local_loads[cpu], READ_ONCE(core_local_loads[cpu]) + 1);
+		WRITE_ONCE(nucleus_loads_local, READ_ONCE(nucleus_loads_local) + num_samples);
+		WRITE_ONCE(core_local_loads[cpu], READ_ONCE(core_local_loads[cpu]) + num_samples);
 	} else if (event == CXLREAD || event == NVMREAD) {
-		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + 1);
-		WRITE_ONCE(core_remote_loads[cpu], READ_ONCE(core_remote_loads[cpu]) + 1);
+		WRITE_ONCE(nucleus_loads_remote, READ_ONCE(nucleus_loads_remote) + num_samples);
+		WRITE_ONCE(core_remote_loads[cpu], READ_ONCE(core_remote_loads[cpu]) + num_samples);
 	} else if (event == MEMWRITE) {
 		WRITE_ONCE(nucleus_all_stores, READ_ONCE(nucleus_all_stores) + 1);
 	}
