@@ -1,0 +1,29 @@
+BEGIN {
+  @start = nsecs;
+}
+
+tracepoint:nucleus_access_freq:nucleus_hp_access_freqs {
+  printf("t=%ld comm=%s iteration=%d hp_addr=0x%lx %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu %d:%lu:%lu\n",
+  (nsecs-@start)/1e9, comm, args.iteration, args.hp_addr,
+  args.bp_index[0], args.bp_freq[0], args.bp_nr_access[0],
+  args.bp_index[1], args.bp_freq[1], args.bp_nr_access[1],
+  args.bp_index[2], args.bp_freq[2], args.bp_nr_access[2],
+  args.bp_index[3], args.bp_freq[3], args.bp_nr_access[3],
+  args.bp_index[4], args.bp_freq[4], args.bp_nr_access[4],
+  args.bp_index[5], args.bp_freq[5], args.bp_nr_access[5],
+  args.bp_index[6], args.bp_freq[6], args.bp_nr_access[6],
+  args.bp_index[7], args.bp_freq[7], args.bp_nr_access[7],
+  args.bp_index[8], args.bp_freq[8], args.bp_nr_access[8],
+  args.bp_index[9], args.bp_freq[9], args.bp_nr_access[9],
+  args.bp_index[10], args.bp_freq[10], args.bp_nr_access[10],
+  args.bp_index[11], args.bp_freq[11], args.bp_nr_access[11],
+  args.bp_index[12], args.bp_freq[12], args.bp_nr_access[12],
+  args.bp_index[13], args.bp_freq[13], args.bp_nr_access[13],
+  args.bp_index[14], args.bp_freq[14], args.bp_nr_access[14],
+  args.bp_index[15], args.bp_freq[15], args.bp_nr_access[15]
+  );
+}
+
+tracepoint:nucleus_access_freq:nucleus_bp_access_freq {
+  printf("t=%ld comm=%s iteration=%d bp_addr=0x%lx bp_freq=%lu bp_nr_access=%lu\n", (nsecs-@start)/1e9, comm, args.iteration, args.bp_addr, args.bp_freq, args.bp_nr_access);
+}

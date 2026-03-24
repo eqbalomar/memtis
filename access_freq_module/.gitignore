@@ -1,0 +1,15 @@
+*.o
+*.cmd
+*.o.*
+*.a
+*.s
+*.ko
+*.so
+*.so.dbg
+*.mod.c
+*.i
+*.lst
+*.order
+modules.builtin
+Module.symvers
+*.mod
