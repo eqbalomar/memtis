@@ -1,9 +1,13 @@
 #!/bin/bash
 
-BIN=/home/omar/CacheLib/opt/cachelib/bin
-WORKLOAD=/home/omar/colloid/workloads
-BENCH_RUN="taskset -c 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 ${BIN}/cachebench --json_test_config ${WORKLOAD}/cachelib/kvcache_reg/config2.json --progress 1"
-BENCH_DRAM="18GB"
+BIN=/home/omar/memtis/memtis-userspace/bench_dir/silo/out-perf.masstree/benchmarks
+BENCH_RUN="taskset -c 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 ${BIN}/dbtest --verbose --bench ycsb --num-threads 16 --scale-factor 150000 --ops-per-worker=250000000 --slow-exit"
+BENCH_DRAM="9GB"
+# NVM_RATIO="1:2"
+
+#####
+# Silo ~59500MB memory footprint
+#####
 
 # if [[ "x${NVM_RATIO}" == "x1:32" ]]; then
 #     BENCH_DRAM="1803MB"
