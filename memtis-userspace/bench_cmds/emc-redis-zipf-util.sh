@@ -19,7 +19,7 @@ pids_memtier_set=()
 for i in $(seq 17 2 31)
 do
     socket_path="/tmp/redis_$((i-16)).sock"
-    taskset -c $i ${MEMTIER_PATH}/memtier_benchmark -S $socket_path --threads=1 --clients=1 --ratio=1:0 --distinct-client-seed -d 384 -R --key-pattern=P:P --key-maximum=$num_keys --pipeline=128 --hide-histogram -n allkeys > $OUTPUT_PATH/redis-set-$((i-16)).log 2>&1 &
+    taskset -c $i ${MEMTIER_PATH}/memtier_benchmark -S $socket_path --threads=1 --clients=1 --ratio=1:0 --distinct-client-seed -d 384 -R --key-pattern=P:P --key-minimum=1 --key-maximum=$num_keys --pipeline=128 --hide-histogram -n allkeys > $OUTPUT_PATH/redis-set-$((i-16)).log 2>&1 &
     pids_memtier_set+=($!)
 done
 
@@ -34,7 +34,7 @@ pids_memtier_get=()
 for i in $(seq 17 2 31)
 do
     socket_path="/tmp/redis_$((i-16)).sock"
-    taskset -c $i ${MEMTIER_PATH}/memtier_benchmark -S $socket_path --ratio=0:1 --threads=1 --clients=1 --distinct-client-seed -d 384 --key-pattern=Z:Z --key-zipf-exp=0.99 --key-maximum=$num_keys --pipeline=128 --hide-histogram -n $num_ops > $OUTPUT_PATH/redis-get-$((i-16)).log 2>&1 &
+    taskset -c $i ${MEMTIER_PATH}/memtier_benchmark -S $socket_path --ratio=0:1 --threads=1 --clients=1 --distinct-client-seed -d 384 --key-pattern=Z:Z --key-zipf-exp=0.99 --key-minimum=1 --key-maximum=$num_keys --pipeline=128 --hide-histogram -n $num_ops > $OUTPUT_PATH/redis-get-$((i-16)).log 2>&1 &
     pids_memtier_get+=($!)
 done
 
