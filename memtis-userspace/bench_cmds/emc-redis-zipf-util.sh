@@ -13,7 +13,7 @@ do
     taskset -c $i ${REDIS_PATH}/redis-server --save "" --appendonly no --port 0 --bind 127.0.0.1 --unixsocket $socket_path --unixsocketperm 755 &
 done
 
-sleep 2
+sleep 5
 
 pids_memtier_set=()
 for i in $(seq 17 2 31)

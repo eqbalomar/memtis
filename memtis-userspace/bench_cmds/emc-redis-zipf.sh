@@ -2,7 +2,7 @@
 
 BIN=/home/omar/memtis/memtis-userspace/bench_cmds/
 
-NUM_KEYS=1000000
+NUM_KEYS=4000000
 NUM_OPS=100000000
 
 BENCH_RUN="bash ${BIN}/emc-redis-zipf-util.sh $NUM_KEYS $NUM_OPS"
