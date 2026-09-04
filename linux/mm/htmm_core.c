@@ -132,9 +132,14 @@ void copy_transhuge_pginfo(struct page *page,
 			page[idx].compound_pginfo[offset].total_accesses;
 	
 	page[idx].compound_pginfo[offset] = zero_pginfo;
-	page[idx].mapping = TAIL_MAPPING;
+	// page[idx].mapping = TAIL_MAPPING;
 	SetPageHtmm(&newpage[idx]);
     }
+
+	for (i = 0; i < HPAGE_PMD_NR; i++) {
+		idx = 4 + i / 4;
+		page[idx].mapping = TAIL_MAPPING;
+	}
 }
 
 pginfo_t *get_compound_pginfo(struct page *page, unsigned long address)
