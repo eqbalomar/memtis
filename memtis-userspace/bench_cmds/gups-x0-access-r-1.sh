@@ -1,8 +1,8 @@
 #!/bin/bash
 
-BIN=/home/omar/nucleus/apps_new
+BIN=/home/arjun/nucleus/apps
 gups_cores=16
-duration=1200
+duration=300
 wss=64
 num_bps_accessed=1
 
