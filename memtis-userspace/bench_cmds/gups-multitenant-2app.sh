@@ -7,7 +7,7 @@
 BIN=/home/arjun/memtis/memtis-userspace/bench_cmds
 
 BENCH_RUN="bash ${BIN}/gups-mt-2app-server.sh"
-BENCH_DRAM="32GB"
+BENCH_DRAM="${LOCAL_CAP_GB}GB"
 
 export BENCH_RUN
 export BENCH_DRAM

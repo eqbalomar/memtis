@@ -8,7 +8,8 @@ addr_inserts_remote=$(cat /proc/kallsyms | grep smoothed_inserts_remote | awk '{
 # addr_p_lo=$(cat /proc/kallsyms | grep p_lo | grep colloid | awk '{print "0x"$1}')
 # addr_p_hi=$(cat /proc/kallsyms | grep p_hi | grep colloid | awk '{print "0x"$1}')
 
-addr_walk_completed=$(cat /proc/kallsyms | grep smoothed_walk_completed | grep -v _hp | grep -v _bp | awk '{print "0x"$1}')
+addr_lfb_occupancy_app0=$(cat /proc/kallsyms | awk '$3=="smoothed_lfb_occupancy_app0" {print "0x"$1}')
+addr_lfb_occupancy_app1=$(cat /proc/kallsyms | awk '$3=="smoothed_lfb_occupancy_app1" {print "0x"$1}')
 # addr_walk_completed_hp=$(cat /proc/kallsyms | grep smoothed_walk_completed_hp | awk '{print "0x"$1}')
 # addr_walk_completed_bp=$(cat /proc/kallsyms | grep smoothed_walk_completed_bp | awk '{print "0x"$1}')
 addr_llc_misses=$(cat /proc/kallsyms | grep smoothed_llc_misses | grep nucleus_algorithm | awk '{print "0x"$1}')
@@ -20,11 +21,11 @@ addr_remote_llc_hits=$(cat /proc/kallsyms | grep smoothed_remote_llc_hits | grep
 addr_loads_misses_pebs=$(cat /proc/kallsyms | grep smoothed_loads_misses_pebs | grep nucleus_algorithm | awk '{print "0x"$1}')
 addr_local_loads_misses_pebs=$(cat /proc/kallsyms | grep smoothed_loads_local_misses_pebs | grep nucleus_algorithm | awk '{print "0x"$1}')
 addr_remote_loads_misses_pebs=$(cat /proc/kallsyms | grep smoothed_loads_remote_misses_pebs | grep nucleus_algorithm | awk '{print "0x"$1}')
-addr_smoothed_perf_llc_misses=$(cat /proc/kallsyms | grep smoothed_perf_llc_misses | grep nucleus_algorithm | awk '{print "0x"$1}')
+# addr_smoothed_perf_llc_misses=$(cat /proc/kallsyms | grep smoothed_perf_llc_misses | grep nucleus_algorithm | awk '{print "0x"$1}')
 
 # bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {printf(\"%ld, colloid_local_lat_gt_remote: %d, local_occ: %lu, remote_occ: %lu, local_inserts: %lu, remote_inserts: %lu, p_lo: %lu, p_hi: %lu, delta_p=%lu, dynlimit=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"colloid_local_lat_gt_remote\"), *($addr_occ_local), *($addr_occ_remote), *($addr_inserts_local), *($addr_inserts_remote), *($addr_p_lo), *($addr_p_hi), *kaddr(\"colloid_delta_p\"), *kaddr(\"colloid_dynlimit\"));}"
 bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {
     printf(\"t=%ld sampling_period=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"current_sample_period\"));
     printf(\"t=%ld local_lat=%lu.%04lu remote_lat=%lu.%04lu local_occ=%lu remote_occ=%lu local_inserts=%lu remote_inserts=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"smoothed_lat_local\")/10000, *kaddr(\"smoothed_lat_local\")%10000, *kaddr(\"smoothed_lat_remote\")/10000, *kaddr(\"smoothed_lat_remote\")%10000, *($addr_occ_local), *($addr_occ_remote), *($addr_inserts_local), *($addr_inserts_remote));
-    printf(\"t=%ld hp_t_lat=%lu.%04lu bp_t_lat=%lu.%04lu smoothed_walk_completed=%lu smoothed_llc_misses=%lu smoothed_local_llc_misses=%lu smoothed_remote_llc_misses=%lu smoothed_llc_hits=%lu smoothed_local_llc_hits=%lu smoothed_remote_llc_hits=%lu smoothed_loads_misses_pebs=%lu smoothed_local_loads_misses_pebs=%lu smoothed_remote_loads_misses_pebs=%lu smoothed_perf_llc_misses=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"smoothed_t_lat_hp\")/10000, *kaddr(\"smoothed_t_lat_hp\")%10000, *kaddr(\"smoothed_t_lat_bp\")/10000, *kaddr(\"smoothed_t_lat_bp\")%10000, *($addr_walk_completed)*100, *($addr_llc_misses)*100, *($addr_local_llc_misses)*100, *($addr_remote_llc_misses)*100, *($addr_llc_hits)*100, *($addr_local_llc_hits)*100, *($addr_remote_llc_hits)*100, *($addr_loads_misses_pebs)*100, *($addr_local_loads_misses_pebs)*100, *($addr_remote_loads_misses_pebs)*100, *($addr_smoothed_perf_llc_misses)*100);
+    printf(\"t=%ld hp_t_lat=%lu.%04lu bp_t_lat=%lu.%04lu smoothed_walk_completed=0 smoothed_llc_misses=%lu smoothed_local_llc_misses=%lu smoothed_remote_llc_misses=%lu smoothed_llc_hits=%lu smoothed_local_llc_hits=%lu smoothed_remote_llc_hits=%lu smoothed_loads_misses_pebs=%lu smoothed_local_loads_misses_pebs=%lu smoothed_remote_loads_misses_pebs=%lu smoothed_perf_llc_misses=0 smoothed_lfb_occupancy_app0=%lu.%04lu smoothed_lfb_occupancy_app1=%lu.%04lu\n\", (nsecs-@start)/1e9, *kaddr(\"smoothed_t_lat_hp\")/10000, *kaddr(\"smoothed_t_lat_hp\")%10000, *kaddr(\"smoothed_t_lat_bp\")/10000, *kaddr(\"smoothed_t_lat_bp\")%10000, *($addr_llc_misses)*100, *($addr_local_llc_misses)*100, *($addr_remote_llc_misses)*100, *($addr_llc_hits)*100, *($addr_local_llc_hits)*100, *($addr_remote_llc_hits)*100, *($addr_loads_misses_pebs)*100, *($addr_local_loads_misses_pebs)*100, *($addr_remote_loads_misses_pebs)*100, *($addr_lfb_occupancy_app0)/10000, *($addr_lfb_occupancy_app0)%10000, *($addr_lfb_occupancy_app1)/10000, *($addr_lfb_occupancy_app1)%10000);
 }"
