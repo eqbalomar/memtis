@@ -43,12 +43,21 @@ module_param(app_num_cores, int, 0);
 //   	Offset 6 is Filter1 -- lots of filter bits, including opcode -- default if unused should be 0x03b, or 0x------33 if using opcode matching
 //   	Offset 7 is Unit Status
 //   	Offsets 8,9,A,B are the Counter count registers
-#define CHA_MSR_PMON_BASE 0x0E00L
-#define CHA_MSR_PMON_CTL_BASE 0x0E01L
-#define CHA_MSR_PMON_FILTER0_BASE 0x0E05L
-// #define CHA_MSR_PMON_FILTER1_BASE 0x0E06L // No FULERT1 on Icelake
-#define CHA_MSR_PMON_STATUS_BASE 0x0E07L
-#define CHA_MSR_PMON_CTR_BASE 0x0E08L
+
+// For intel ice lake
+// #define CHA_MSR_PMON_BASE 0x0E00L
+// #define CHA_MSR_PMON_CTL_BASE 0x0E01L
+// #define CHA_MSR_PMON_FILTER0_BASE 0x0E05L
+// // #define CHA_MSR_PMON_FILTER1_BASE 0x0E06L // No FULERT1 on Icelake
+// #define CHA_MSR_PMON_STATUS_BASE 0x0E07L
+// #define CHA_MSR_PMON_CTR_BASE 0x0E08L
+
+// For intel granite rapids
+#define CHA_MSR_PMON_BASE         0x2000L
+#define CHA_MSR_PMON_STATUS_BASE  0x2001L
+#define CHA_MSR_PMON_CTL_BASE     0x2002L
+#define CHA_MSR_PMON_CTR_BASE     0x2008L
+#define CHA_MSR_PMON_FILTER0_BASE 0x200EL
 
 #define NUM_CHA_BOXES 18 // There are 32 CHA boxes in icelake server. After the first 18 boxes, the couter offsets change.
 #define NUM_CHA_COUNTERS 4
