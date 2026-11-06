@@ -1,6 +1,8 @@
 #!/bin/bash
 
-BIN=/home/omar/nucleus/apps
+bench_cmd_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+workspace_dir=${workspace_dir:-"$(cd "$bench_cmd_dir/../../.." && pwd)"}
+BIN=${nucleus_path:-"$workspace_dir/nucleus"}/apps
 gups_cores=16
 duration=1200
 wss=128

@@ -9,8 +9,10 @@ NMEM_NODES=$(cat /sys/devices/system/node/has_memory | awk -F '-' '{print $NF+1}
 MEM_NODES=($(ls /sys/devices/system/node | grep node | awk -F 'node' '{print $NF}'))
 
 CGROUP_NAME="htmm"
-###### update DIR!
-DIR=/home/omar/memtis/memtis-userspace
+script_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DIR=${DIR:-"$(cd "$script_path/.." && pwd)"}
+export workspace_dir=${workspace_dir:-"$(cd "$DIR/../.." && pwd)"}
+export nucleus_path=${nucleus_path:-"$workspace_dir/nucleus"}
 LOCAL_NUMA=1
 
 CONFIG_PERF=off

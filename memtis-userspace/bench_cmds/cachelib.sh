@@ -1,7 +1,9 @@
 #!/bin/bash
 
-BIN=/home/omar/CacheLib/opt/cachelib/bin
-WORKLOAD=/home/omar/colloid/workloads
+bench_cmd_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+workspace_dir=${workspace_dir:-"$(cd "$bench_cmd_dir/../../.." && pwd)"}
+BIN=${cachelib_dir:-"$workspace_dir/CacheLib"}/opt/cachelib/bin
+WORKLOAD=${colloid_dir:-"$workspace_dir/colloid"}/workloads
 BENCH_RUN="taskset -c 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 ${BIN}/cachebench --json_test_config ${WORKLOAD}/cachelib/kvcache_reg/config2.json --progress 1"
 BENCH_DRAM="18GB"
 

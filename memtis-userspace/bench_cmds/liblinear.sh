@@ -1,5 +1,7 @@
 #!/bin/bash
-BENCH_BIN=/home/omar/memtis/memtis-userspace/bench_dir/liblinear-multicore-2.48
+bench_cmd_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DIR=${DIR:-"$(cd "$bench_cmd_dir/.." && pwd)"}
+BENCH_BIN=$DIR/bench_dir/liblinear-multicore-2.48
 
 # anon footprint 79640MB
 # file footprint 21581MB
