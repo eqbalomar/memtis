@@ -4,7 +4,7 @@
 #include <linux/htmm.h>
 #include "nucleus_measurement.h"
 
-#define CORE_MON_PERF 61
+#define CORE_MON_PERF 26
 
 #define T_HP_FACTOR 300 // 300 -> 3
 #define T_BP_FACTOR 400 // 400 -> 4

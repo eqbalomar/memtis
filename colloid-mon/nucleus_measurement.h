@@ -13,7 +13,7 @@
 
 #define EWMA_EXP_PERF 11
 
-#define LOCAL_NUMA 1
+#define LOCAL_NUMA 0
 #define WORKER_BUDGET 1000000
 
 #define CHA_FREQ 2400000000ULL
