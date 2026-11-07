@@ -31,7 +31,7 @@ EXPORT_SYMBOL(nucleus_split_migrate_queues_initialized);
 
 static struct task_struct *knucleussplitmigraterd[NUM_SPLIT_MIGRATE_THREADS] = {NULL};
 
-#define NUM_NUMA_NODES 2
+#define NUM_NUMA_NODES 3
 
 static bool has_split_or_migrate_requests(int thread_id)
 {

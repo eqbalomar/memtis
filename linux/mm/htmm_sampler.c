@@ -119,7 +119,7 @@ static int __perf_event_open(__u64 config, __u64 config1, __u64 cpu,
 
 static int pebs_init(pid_t pid, int node)
 {
-    int cpu, event, socket_cpu_count;
+    int cpu, event, socket_cpu_count = 0;
 
     mem_event = kzalloc(sizeof(struct perf_event **) * CPUS_PER_SOCKET, GFP_KERNEL);
     for (cpu = 0; cpu < CPUS_PER_SOCKET; cpu++) {

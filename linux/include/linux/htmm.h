@@ -7,13 +7,13 @@
 
 #define BUFFER_SIZE	32 /* 128: 1MB */
 #define CPUS_PER_SOCKET 32
-#define KSAMPLED_SOCKET 1
+#define KSAMPLED_SOCKET 0
 #define MAX_MIGRATION_RATE_IN_MBPS  2048 /* 2048MB per sec */
 
 
 /* pebs events */
 #define DRAM_LLC_LOAD_MISS  0x1d3
-#define REMOTE_DRAM_LLC_LOAD_MISS   0x2d3
+#define REMOTE_DRAM_LLC_LOAD_MISS   0x10d3
 #define NVM_LLC_LOAD_MISS   0x80d1
 #define ALL_STORES	    0x82d0
 #define ALL_LOADS	    0x81d0

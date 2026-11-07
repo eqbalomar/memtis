@@ -185,8 +185,8 @@ extern int mpol_misplaced(struct page *, struct vm_area_struct *, unsigned long)
 extern void mpol_put_task_policy(struct task_struct *);
 
 extern bool numa_demotion_enabled;
-#define HTMM_CXL_LOCAL_NUMA 1
-#define HTMM_CXL_REMOTE_NUMA 0
+#define HTMM_CXL_LOCAL_NUMA 0
+#define HTMM_CXL_REMOTE_NUMA 2
 #ifdef CONFIG_HTMM
 extern unsigned int htmm_sample_period;
 extern unsigned int htmm_inst_sample_period;
