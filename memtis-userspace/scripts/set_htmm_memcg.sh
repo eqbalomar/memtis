@@ -16,6 +16,11 @@ fi
 echo "+memory" | sudo tee ${CGROUP_DIR}/cgroup.subtree_control
 echo "+cpuset" | sudo tee ${CGROUP_DIR}/cgroup.subtree_control
 
+if [ "x$3" == "xenable" ]; then
+    echo "0-31,64-95" | sudo tee ${CGROUP_DIR}/${CGROUP_NAME}/cpuset.cpus
+    echo "0,2" | sudo tee ${CGROUP_DIR}/${CGROUP_NAME}/cpuset.mems
+fi
+
 echo ${BASH_PID} | sudo tee ${CGROUP_DIR}/${CGROUP_NAME}/cgroup.procs
 if [ "x$3" == "xenable" ]; then
     echo "enabled" | sudo tee ${CGROUP_DIR}/${CGROUP_NAME}/memory.htmm_enabled

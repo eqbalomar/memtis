@@ -13,7 +13,7 @@ script_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DIR=${DIR:-"$(cd "$script_path/.." && pwd)"}
 export workspace_dir=${workspace_dir:-"$(cd "$DIR/../.." && pwd)"}
 export nucleus_path=${nucleus_path:-"$workspace_dir/nucleus"}
-LOCAL_NUMA=1
+LOCAL_NUMA=0
 
 CONFIG_PERF=off
 CONFIG_NS=off
