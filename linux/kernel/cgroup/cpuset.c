@@ -3260,8 +3260,8 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
 	/* synchronize mems_allowed to N_MEMORY */
 	if (mems_updated) {
 		spin_lock_irq(&callback_lock);
-		if (!on_dfl)
-			top_cpuset.mems_allowed = new_mems;
+		// if (!on_dfl)
+		top_cpuset.mems_allowed = new_mems;
 		top_cpuset.effective_mems = new_mems;
 		spin_unlock_irq(&callback_lock);
 		update_tasks_nodemask(&top_cpuset);
